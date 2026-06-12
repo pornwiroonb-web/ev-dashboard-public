@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ev-dashboard
+    env: docker
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    disk:
+      name: ev-dashboard-data
+      mountPath: /data
+      sizeGB: 1

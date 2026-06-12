@@ -1,0 +1,338 @@
+{
+  "projects": [
+    {
+      "id": "project-1bdde604-6a78-4bb0-8d86-36e898b85832",
+      "name": "Tatal Solution - Project \"งานติดตั้งสถานีอัดประจุไฟฟ้า ปั้มเชลล์ จ.สุรินทร์\"",
+      "client": "บ. อีวี เทลวี จำกัด",
+      "location": "จ.สุรินทร์",
+      "owner": "นายพรวิรุฬ บุญยวรรณ",
+      "dueDate": "2026-07-31",
+      "phases": [
+        {
+          "id": "survey",
+          "name": "Survey",
+          "order": 1,
+          "status": "Done",
+          "progress": 100,
+          "checklist": [
+            "Site walk survey",
+            "Electrical load check",
+            "Photo documentation",
+            "Layout confirmation"
+          ],
+          "updates": [
+            {
+              "id": "c49dbbc4-fe59-405d-b3c7-29c6505f2358",
+              "createdAt": "2026-06-12T04:41:27.559Z",
+              "author": "นายพรวิรุฬ บุญยวรรณ",
+              "note": "สำรวจหน้างานเรียบร้อย",
+              "progress": 100,
+              "status": "Done",
+              "images": [
+                {
+                  "name": "LINE_ALBUM_สำรวจพื้นที่_260326_11.jpg",
+                  "url": "/uploads/2026-06-12T04-41-27-557Z_3a540ef5-2f05-47d7-aefa-e63276ca89f3_LINE_ALBUM___260326_11_jpg.jpg"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pre-construction",
+          "name": "Pre-Construction",
+          "order": 2,
+          "status": "In Progress",
+          "progress": 50,
+          "checklist": [
+            "Permit and approval tracking",
+            "Material readiness",
+            "Safety plan review",
+            "Subcontractor coordination"
+          ],
+          "updates": [
+            {
+              "id": "011acac0-5f60-4842-a052-0667d9d673a7",
+              "createdAt": "2026-06-12T04:42:04.473Z",
+              "author": "นายพรวิรุฬ บุญยวรรณ",
+              "note": "ลงพื้นที่ตรวจสอบหน้างาน พร้อม ผรม. เพื่อประเมิณราคา",
+              "progress": 50,
+              "status": "In Progress",
+              "images": []
+            }
+          ]
+        },
+        {
+          "id": "construction",
+          "name": "Construction",
+          "order": 3,
+          "status": "Not Started",
+          "progress": 0,
+          "checklist": [
+            "Civil work",
+            "Cable pulling",
+            "Panel installation",
+            "Charger mounting"
+          ],
+          "updates": []
+        },
+        {
+          "id": "commissioning",
+          "name": "Commissioning",
+          "order": 4,
+          "status": "Not Started",
+          "progress": 0,
+          "checklist": [
+            "Insulation test",
+            "Functional test",
+            "Trial charging",
+            "Handover sign-off"
+          ],
+          "updates": []
+        }
+      ]
+    },
+    {
+      "id": "ev-station-001",
+      "name": "Tatal Solution - Project \"งานติดตั้งสถานีอัดประจุไฟฟ้า Isuzu บางแสน จ.ชลบุรี\"",
+      "client": "บ. เอ.ที. 59 จำกัด [Isuzu บางแสน]",
+      "location": "จังหวัด ชลบุรี",
+      "owner": "นายพรวิรุฬ บุญยวรรณ",
+      "dueDate": "2026-06-30",
+      "phases": [
+        {
+          "id": "survey",
+          "name": "Survey",
+          "order": 1,
+          "status": "In Progress",
+          "progress": 50,
+          "checklist": [
+            "Site walk survey",
+            "Electrical load check",
+            "Photo documentation",
+            "Layout confirmation"
+          ],
+          "updates": [
+            {
+              "id": "7e13ff90-ac49-497b-8ace-80c250b88679",
+              "createdAt": "2026-06-12T04:37:26.997Z",
+              "author": "นายพรวิรุฬ บุญยวรรณ",
+              "note": "รอจ่ายไฟ จากพื้นที่",
+              "progress": 50,
+              "status": "In Progress",
+              "images": []
+            },
+            {
+              "id": "c0360671-badf-4313-a2b5-33025b529a87",
+              "createdAt": "2026-06-12T04:35:21.301Z",
+              "author": "นายพรวิรุฬ บุญยวรรณ",
+              "note": "",
+              "progress": 100,
+              "status": "Done",
+              "images": [
+                {
+                  "name": "20260312_102229324_iOS.jpg",
+                  "url": "/uploads/2026-06-12T04-35-21-297Z_10c08ef8-2ab6-426e-a6ba-984653e267bc_20260312_102229324_iOS_jpg.jpg"
+                }
+              ]
+            },
+            {
+              "id": "230df35f-e764-449d-a525-d335f59379b1",
+              "createdAt": "2026-06-12T03:43:47.780Z",
+              "author": "Niran",
+              "note": "Completed site walk and confirmed cable route for charger bay A.",
+              "progress": 75,
+              "status": "In Progress",
+              "images": []
+            }
+          ]
+        },
+        {
+          "id": "pre-construction",
+          "name": "Pre-Construction",
+          "order": 2,
+          "status": "Done",
+          "progress": 100,
+          "checklist": [
+            "Permit and approval tracking",
+            "Material readiness",
+            "Safety plan review",
+            "Subcontractor coordination"
+          ],
+          "updates": [
+            {
+              "id": "bc663050-0153-430e-ba4d-85587cca7dad",
+              "createdAt": "2026-06-12T04:36:06.435Z",
+              "author": "นายพรวิรุฬ บุญยวรรณ",
+              "note": "อนุมัติ แบบ และ ราคา เรียบร้อย",
+              "progress": 100,
+              "status": "Done",
+              "images": []
+            }
+          ]
+        },
+        {
+          "id": "construction",
+          "name": "Construction",
+          "order": 3,
+          "status": "Done",
+          "progress": 100,
+          "checklist": [
+            "Civil work",
+            "Cable pulling",
+            "Panel installation",
+            "Charger mounting"
+          ],
+          "updates": [
+            {
+              "id": "90116d05-c18c-470f-afe3-fbaf693e561c",
+              "createdAt": "2026-06-12T04:36:57.102Z",
+              "author": "นายพรวิรุฬ บุญยวรรณ",
+              "note": "ก่อสร้างสถานี และ ลงเครื่อง แล้วเสร็จ",
+              "progress": 100,
+              "status": "Done",
+              "images": [
+                {
+                  "name": "LINE_ALBUM_Isuzu_260407_5.jpg",
+                  "url": "/uploads/2026-06-12T04-36-57-099Z_179d5a41-74bf-4d48-a5e7-be6344613c03_LINE_ALBUM_Isuzu_260407_5_jpg.jpg"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "commissioning",
+          "name": "Commissioning",
+          "order": 4,
+          "status": "In Progress",
+          "progress": 50,
+          "checklist": [
+            "Insulation test",
+            "Functional test",
+            "Trial charging",
+            "Handover sign-off"
+          ],
+          "updates": [
+            {
+              "id": "eba0727b-1850-4942-b4e1-d26d299283a5",
+              "createdAt": "2026-06-12T04:37:45.044Z",
+              "author": "นายพรวิรุฬ บุญยวรรณ",
+              "note": "รอจ่ายไฟ จากพื้นที่",
+              "progress": 50,
+              "status": "In Progress",
+              "images": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "activity": [
+    {
+      "id": "011acac0-5f60-4842-a052-0667d9d673a7",
+      "createdAt": "2026-06-12T04:42:04.473Z",
+      "author": "นายพรวิรุฬ บุญยวรรณ",
+      "note": "ลงพื้นที่ตรวจสอบหน้างาน พร้อม ผรม. เพื่อประเมิณราคา",
+      "progress": 50,
+      "status": "In Progress",
+      "images": [],
+      "projectId": "project-1bdde604-6a78-4bb0-8d86-36e898b85832",
+      "projectName": "Tatal Solution - Project \"งานติดตั้งสถานีอัดประจุไฟฟ้า ปั้มเชลล์ จ.สุรินทร์\"",
+      "phaseId": "pre-construction",
+      "phaseName": "Pre-Construction"
+    },
+    {
+      "id": "c49dbbc4-fe59-405d-b3c7-29c6505f2358",
+      "createdAt": "2026-06-12T04:41:27.559Z",
+      "author": "นายพรวิรุฬ บุญยวรรณ",
+      "note": "สำรวจหน้างานเรียบร้อย",
+      "progress": 100,
+      "status": "Done",
+      "images": [
+        {
+          "name": "LINE_ALBUM_สำรวจพื้นที่_260326_11.jpg",
+          "url": "/uploads/2026-06-12T04-41-27-557Z_3a540ef5-2f05-47d7-aefa-e63276ca89f3_LINE_ALBUM___260326_11_jpg.jpg"
+        }
+      ],
+      "projectId": "project-1bdde604-6a78-4bb0-8d86-36e898b85832",
+      "projectName": "Tatal Solution - Project \"งานติดตั้งสถานีอัดประจุไฟฟ้า ปั้มเชลล์ จ.สุรินทร์\"",
+      "phaseId": "survey",
+      "phaseName": "Survey"
+    },
+    {
+      "id": "eba0727b-1850-4942-b4e1-d26d299283a5",
+      "createdAt": "2026-06-12T04:37:45.044Z",
+      "author": "นายพรวิรุฬ บุญยวรรณ",
+      "note": "รอจ่ายไฟ จากพื้นที่",
+      "progress": 50,
+      "status": "In Progress",
+      "images": [],
+      "projectId": "ev-station-001",
+      "projectName": "Tatal Solution - Project \"งานติดตั้งสถานีอัดประจุไฟฟ้า Isuzu บางแสน จ.ชลบุรี\"",
+      "phaseId": "commissioning",
+      "phaseName": "Commissioning"
+    },
+    {
+      "id": "7e13ff90-ac49-497b-8ace-80c250b88679",
+      "createdAt": "2026-06-12T04:37:26.997Z",
+      "author": "นายพรวิรุฬ บุญยวรรณ",
+      "note": "รอจ่ายไฟ จากพื้นที่",
+      "progress": 50,
+      "status": "In Progress",
+      "images": [],
+      "projectId": "ev-station-001",
+      "projectName": "Tatal Solution - Project \"งานติดตั้งสถานีอัดประจุไฟฟ้า Isuzu บางแสน จ.ชลบุรี\"",
+      "phaseId": "survey",
+      "phaseName": "Survey"
+    },
+    {
+      "id": "90116d05-c18c-470f-afe3-fbaf693e561c",
+      "createdAt": "2026-06-12T04:36:57.102Z",
+      "author": "นายพรวิรุฬ บุญยวรรณ",
+      "note": "ก่อสร้างสถานี และ ลงเครื่อง แล้วเสร็จ",
+      "progress": 100,
+      "status": "Done",
+      "images": [
+        {
+          "name": "LINE_ALBUM_Isuzu_260407_5.jpg",
+          "url": "/uploads/2026-06-12T04-36-57-099Z_179d5a41-74bf-4d48-a5e7-be6344613c03_LINE_ALBUM_Isuzu_260407_5_jpg.jpg"
+        }
+      ],
+      "projectId": "ev-station-001",
+      "projectName": "Tatal Solution - Project \"งานติดตั้งสถานีอัดประจุไฟฟ้า Isuzu บางแสน จ.ชลบุรี\"",
+      "phaseId": "construction",
+      "phaseName": "Construction"
+    },
+    {
+      "id": "bc663050-0153-430e-ba4d-85587cca7dad",
+      "createdAt": "2026-06-12T04:36:06.435Z",
+      "author": "นายพรวิรุฬ บุญยวรรณ",
+      "note": "อนุมัติ แบบ และ ราคา เรียบร้อย",
+      "progress": 100,
+      "status": "Done",
+      "images": [],
+      "projectId": "ev-station-001",
+      "projectName": "Tatal Solution - Project \"งานติดตั้งสถานีอัดประจุไฟฟ้า Isuzu บางแสน จ.ชลบุรี\"",
+      "phaseId": "pre-construction",
+      "phaseName": "Pre-Construction"
+    },
+    {
+      "id": "c0360671-badf-4313-a2b5-33025b529a87",
+      "createdAt": "2026-06-12T04:35:21.301Z",
+      "author": "นายพรวิรุฬ บุญยวรรณ",
+      "note": "",
+      "progress": 100,
+      "status": "Done",
+      "images": [
+        {
+          "name": "20260312_102229324_iOS.jpg",
+          "url": "/uploads/2026-06-12T04-35-21-297Z_10c08ef8-2ab6-426e-a6ba-984653e267bc_20260312_102229324_iOS_jpg.jpg"
+        }
+      ],
+      "projectId": "ev-station-001",
+      "projectName": "Tatal Solution - Project \"งานติดตั้งสถานีอัดประจุไฟฟ้า Isuzu บางแสน จ.ชลบุรี\"",
+      "phaseId": "survey",
+      "phaseName": "Survey"
+    }
+  ],
+  "updatedAt": "2026-06-12T04:42:04.473Z"
+}

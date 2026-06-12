@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>แดชบอร์ด EV | ติดตามโครงการ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <div class="bg-grid"></div>
+    <section id="auth-screen" class="auth-shell">
+      <div class="card auth-card">
+        <p class="eyebrow">Access Gate</p>
+        <h1>กรอกรหัสเชิญเพื่อเข้าใช้งาน</h1>
+        <p class="lead">
+          สำหรับทีมงานและบุคคลภายนอกที่ได้รับอนุญาตเท่านั้น
+          ถ้ามีรหัสเชิญ ให้กรอกเพื่อเข้าสู่ระบบและรายงานความคืบหน้าได้ทันที
+        </p>
+        <form id="auth-form" class="auth-form">
+          <label>
+            รหัสเชิญ
+            <input id="invite-code-input" type="password" placeholder="กรอกรหัสเชิญ" autocomplete="one-time-code" />
+          </label>
+          <div class="actions">
+            <button type="submit" class="primary">เข้าสู่ระบบ</button>
+          </div>
+          <p id="auth-message" class="form-message"></p>
+        </form>
+      </div>
+    </section>
+
+    <main id="dashboard-shell" class="shell hidden">
+      <header class="hero card">
+        <div>
+          <p class="eyebrow">ระบบติดตามโครงการ EV</p>
+          <h1>แดชบอร์ดติดตามงานติดตั้งสถานีอัดประจุไฟฟ้า</h1>
+          <p class="lead">
+            ใช้ติดตามงาน 4 ขั้นตอนหลัก: Survey, Pre-Construction, Construction และ Commissioning
+            พร้อมรายงานความคืบหน้า แนบรูป และดูสถานะล่าสุดแบบเรียลไทม์
+          </p>
+          <div class="project-switcher">
+            <label>
+              เลือกโครงการ
+              <select id="project-select"></select>
+            </label>
+            <div class="inline-actions">
+              <button type="button" id="open-new-project" class="ghost">+ เพิ่มโครงการ</button>
+              <button type="button" id="logout-button" class="ghost">ออกจากระบบ</button>
+            </div>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <article class="stat">
+            <span>โครงการ</span>
+            <strong id="project-name">-</strong>
+          </article>
+          <article class="stat">
+            <span>ความคืบหน้ารวม</span>
+            <strong id="overall-progress">0%</strong>
+          </article>
+          <article class="stat">
+            <span>อัปเดตล่าสุด</span>
+            <strong id="updated-at">-</strong>
+          </article>
+        </div>
+      </header>
+
+      <section class="grid-top">
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">สถานะงาน</p>
+              <h2>ภาพรวม 4 ขั้นตอน</h2>
+            </div>
+            <div class="pill" id="live-pill">เชื่อมต่อสด</div>
+          </div>
+          <div id="phase-cards" class="phase-grid"></div>
+        </article>
+
+        <article class="card report-card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">รายงานหน้างาน</p>
+              <h2>ส่งความคืบหน้าและรูปถ่าย</h2>
+            </div>
+          </div>
+
+          <form id="report-form" class="report-form">
+            <label>
+              ขั้นตอนงาน
+              <select id="phase-select" required></select>
+            </label>
+
+            <div class="two-col">
+              <label>
+                ผู้รายงาน
+                <input id="author-input" type="text" placeholder="ชื่อผู้ปฏิบัติงาน" value="Operator" />
+              </label>
+              <label>
+                สถานะ
+                <select id="status-select">
+                  <option value="Not Started">ยังไม่เริ่ม</option>
+                  <option value="In Progress" selected>กำลังดำเนินการ</option>
+                  <option value="Blocked">ติดขัด</option>
+                  <option value="Done">เสร็จแล้ว</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              ความคืบหน้า (%)
+              <input id="progress-input" type="range" min="0" max="100" step="1" value="0" />
+              <span class="range-value" id="progress-value">0%</span>
+            </label>
+
+            <label>
+              รายละเอียดความคืบหน้า
+              <textarea
+                id="note-input"
+                rows="4"
+                placeholder="เช่น ตรวจสอบพื้นที่แล้ว, ติดตั้งตู้ MDB เสร็จ, รออนุมัติแบบ..."
+              ></textarea>
+            </label>
+
+            <label class="file-drop">
+              <span>แนบรูปงาน</span>
+              <input id="images-input" type="file" accept="image/*" multiple />
+              <small>อัปโหลดรูปจากหน้างานได้หลายไฟล์</small>
+            </label>
+
+            <div id="image-preview" class="preview-grid"></div>
+
+            <div class="actions">
+              <button type="submit" class="primary">บันทึกรายงาน</button>
+              <button type="button" id="reset-form" class="ghost">ล้างฟอร์ม</button>
+            </div>
+            <p id="form-message" class="form-message"></p>
+          </form>
+        </article>
+      </section>
+
+      <section class="grid-bottom">
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">รายละเอียดโครงการ</p>
+              <h2>ข้อมูลหลัก</h2>
+            </div>
+          </div>
+          <dl class="meta-grid">
+            <div>
+              <dt>ลูกค้า</dt>
+              <dd id="client-name">-</dd>
+            </div>
+            <div>
+              <dt>สถานที่</dt>
+              <dd id="location-name">-</dd>
+            </div>
+            <div>
+              <dt>ผู้รับผิดชอบ</dt>
+              <dd id="owner-name">-</dd>
+            </div>
+            <div>
+              <dt>กำหนดส่ง</dt>
+              <dd id="due-date">-</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">กิจกรรมล่าสุด</p>
+              <h2>กิจกรรมสด</h2>
+            </div>
+          </div>
+          <div id="activity-feed" class="feed"></div>
+        </article>
+      </section>
+
+      <section class="grid-bottom forms-grid">
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">เพิ่มโครงการ</p>
+              <h2>สร้างโครงการใหม่</h2>
+            </div>
+          </div>
+          <form id="new-project-form" class="report-form hidden">
+            <label>
+              ชื่อโครงการ
+              <input id="new-project-name" type="text" placeholder="เช่น EV Station - The Mall" />
+            </label>
+            <div class="two-col">
+              <label>
+                ลูกค้า
+                <input id="new-project-client" type="text" placeholder="ชื่อลูกค้า" />
+              </label>
+              <label>
+                กำหนดส่ง
+                <input id="new-project-due" type="date" />
+              </label>
+            </div>
+            <div class="two-col">
+              <label>
+                สถานที่
+                <input id="new-project-location" type="text" placeholder="ระบุสถานที่" />
+              </label>
+              <label>
+                ผู้รับผิดชอบ
+                <input id="new-project-owner" type="text" placeholder="ชื่อทีม/ผู้รับผิดชอบ" />
+              </label>
+            </div>
+            <div class="actions">
+              <button type="submit" class="primary">สร้างโครงการ</button>
+              <button type="button" id="cancel-new-project" class="ghost">ยกเลิก</button>
+            </div>
+            <p id="new-project-message" class="form-message"></p>
+          </form>
+        </article>
+
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">แก้ไขโครงการ</p>
+              <h2>เปลี่ยนชื่อและข้อมูล</h2>
+            </div>
+          </div>
+          <form id="edit-project-form" class="report-form">
+            <label>
+              ชื่อโครงการ
+              <input id="edit-project-name" type="text" />
+            </label>
+            <div class="two-col">
+              <label>
+                ลูกค้า
+                <input id="edit-project-client" type="text" />
+              </label>
+              <label>
+                กำหนดส่ง
+                <input id="edit-project-due" type="date" />
+              </label>
+            </div>
+            <div class="two-col">
+              <label>
+                สถานที่
+                <input id="edit-project-location" type="text" />
+              </label>
+              <label>
+                ผู้รับผิดชอบ
+                <input id="edit-project-owner" type="text" />
+              </label>
+            </div>
+            <div class="actions">
+              <button type="submit" class="primary">บันทึกการแก้ไข</button>
+            </div>
+            <p id="edit-project-message" class="form-message"></p>
+          </form>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
