@@ -2,12 +2,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY ev-dashboard/package.json ./package.json
-COPY ev-dashboard/server.js ./server.js
-COPY ev-dashboard/public ./public
+COPY package.json ./package.json
+COPY server.js ./server.js
+COPY public ./public
 
 ENV NODE_ENV=production
 ENV APP_DATA_DIR=/data
+
+RUN npm install --omit=dev
 
 RUN mkdir -p /data
 
