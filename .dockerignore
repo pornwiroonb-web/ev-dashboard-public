@@ -1,5 +1,6 @@
-**
-!ev-dashboard/**
-!Dockerfile
-!render.yaml
-!README.md
+node_modules
+.git
+*.bat
+*.ps1
+render.yaml
+README.md
