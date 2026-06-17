@@ -510,8 +510,9 @@ function broadcast(payload) {
   }
 }
 async function serveStatic(res, requestPath) {
-  const safePath = path.normalize(requestPath).replace(/^(\.\.[/\\])+/, "");
-  let filePath = path.join(publicDir, safePath);
+  const filePath = path.join(publicDir, path.basename(requestPath));
+  return serveFile(res, filePath);
+}
   try {
     const stat = await fs.stat(filePath);
     if (stat.isDirectory()) {
