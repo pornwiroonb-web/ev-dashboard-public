@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EV Work Report & Checklist — EleXa by EGAT</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);--text:#e6edf3;--muted:#7d8590;--accent:#f7c948;--accent2:#2ea043;--accent3:#388bfd;--danger:#f85149;--warning:#d29922;--radius:8px;--radius-lg:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Noto Sans Thai',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+.app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.logo-badge{background:var(--accent);color:#1a1200;font-weight:700;font-size:11px;padding:4px 10px;border-radius:6px;letter-spacing:.5px}
+.app-title{font-size:15px;font-weight:600}.app-subtitle{font-size:12px;color:var(--muted)}
+.header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.date-badge{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;font-size:12px;color:var(--muted)}
+.container{max-width:1100px;margin:0 auto;padding:20px 16px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:4px;margin-bottom:20px}
+.tab-btn{flex:1;padding:9px 12px;background:none;border:none;border-radius:var(--radius);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;font-family:inherit}
+.tab-btn:hover{background:var(--surface2);color:var(--text)}.tab-btn.active{background:var(--accent);color:#1a1200;font-weight:600}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.card-title{font-size:14px;font-weight:600}.card-icon{color:var(--accent);font-size:18px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;margin-top:12px}
+label:first-child{margin-top:0}
+input[type="text"],input[type="date"],input[type="time"],textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:inherit;font-size:13px;padding:8px 12px;outline:none;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:80px}select option{background:#1c2128}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);border:none;font-family:inherit;font-size:13px;cursor:pointer;transition:all .15s;font-weight:500}
+.btn-primary{background:var(--accent);color:#1a1200}.btn-primary:hover{background:#f0c040;transform:translateY(-1px)}
+.btn-success{background:var(--accent2);color:#fff}.btn-success:hover{background:#2c9940}
+.btn-outline{background:none;border:1px solid var(--border2);color:var(--muted)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:none;border:1px solid var(--danger);color:var(--danger)}.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-info{background:rgba(56,139,253,.15);border:1px solid rgba(56,139,253,.3);color:#58a6ff}.btn-info:hover{background:rgba(56,139,253,.25)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-todo{background:rgba(125,133,144,.2);color:var(--muted)}.badge-inprogress{background:rgba(56,139,253,.2);color:#58a6ff}
+.badge-blocked{background:rgba(248,81,73,.2);color:#f85149}.badge-done{background:rgba(46,160,67,.2);color:#3fb950}
+/* Photo */
+.photo-upload-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);margin-top:8px}
+.photo-upload-zone:hover,.photo-upload-zone.drag-over{border-color:var(--accent);background:rgba(247,201,72,.05)}
+.photo-upload-zone i{font-size:32px;color:var(--muted);display:block;margin-bottom:8px}
+.photo-upload-zone p{font-size:13px;color:var(--muted)}.photo-upload-zone span{font-size:12px;color:var(--accent);text-decoration:underline}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:10px}
+.photo-thumb{position:relative;aspect-ratio:1;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;cursor:pointer}
+.photo-thumb .remove-photo{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:11px}
+.photo-thumb .remove-photo:hover{background:var(--danger)}
+.photo-thumb .photo-caption{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);padding:3px 6px;font-size:10px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.photo-count-badge{background:rgba(247,201,72,.15);color:var(--accent);border:1px solid rgba(247,201,72,.3);padding:2px 8px;border-radius:10px;font-size:11px;margin-left:8px}
+/* Lightbox */
+#lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#lightbox.open{display:flex}
+#lightbox img{max-width:90vw;max-height:80vh;border-radius:var(--radius);object-fit:contain}
+#lightbox-caption{color:var(--muted);font-size:13px;max-width:80vw;text-align:center}
+#lightbox-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1}
+#lightbox-nav{display:flex;gap:16px}
+#lightbox-nav button{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-size:13px}
+#lightbox-nav button:hover{background:rgba(255,255,255,.2)}
+/* Diary */
+.diary-entry{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.diary-entry-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.diary-date{font-size:12px;color:var(--accent);font-weight:600}
+.diary-project-tag{font-size:11px;background:rgba(247,201,72,.15);color:var(--accent);padding:2px 8px;border-radius:10px}
+.diary-body{font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap}
+.diary-meta{margin-top:8px;display:flex;gap:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+/* Checklist */
+.checklist-group{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px}
+.checklist-group-header{background:rgba(247,201,72,.08);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.checklist-group-title{font-size:13px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:8px}
+.checklist-progress-text{font-size:12px;color:var(--muted)}
+.checklist-items{padding:8px 14px 12px}
+.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer}
+.checklist-item:last-child{border-bottom:none}
+.check-box{width:18px;height:18px;border:1.5px solid var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .15s}
+.check-box.checked{background:var(--accent2);border-color:var(--accent2)}
+.check-box.checked::after{content:'\2713';color:#fff;font-size:11px;font-weight:700}
+.checklist-item-label{font-size:13px;color:var(--text);flex:1}
+.checklist-item.checked-item .checklist-item-label{color:var(--muted);text-decoration:line-through}
+.progress-bar-wrap{background:rgba(255,255,255,.08);border-radius:4px;height:4px;overflow:hidden;margin-top:4px}
+.progress-bar-fill{height:100%;background:var(--accent2);border-radius:4px;transition:width .3s}
+/* Report */
+.report-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start}
+.report-type-icon{width:40px;height:40px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px}
+.icon-survey{background:rgba(56,139,253,.15);color:#58a6ff}.icon-construction{background:rgba(247,201,72,.15);color:var(--accent)}
+.icon-commissioning{background:rgba(46,160,67,.15);color:#3fb950}.icon-maintenance{background:rgba(248,81,73,.15);color:#f85149}
+.report-content{flex:1;min-width:0}.report-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.report-desc{font-size:12px;color:var(--muted)}.report-footer{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;align-items:center}
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;text-align:center}
+.stat-value{font-size:24px;font-weight:700;color:var(--accent)}.stat-label{font-size:11px;color:var(--muted);margin-top:2px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state i{font-size:40px;margin-bottom:12px;display:block;opacity:.4}
+#toast{position:fixed;bottom:24px;right:24px;background:#1c2128;border:1px solid var(--accent2);color:var(--text);padding:12px 20px;border-radius:var(--radius);font-size:13px;opacity:0;transform:translateY(10px);transition:all .2s;z-index:999;display:flex;align-items:center;gap:8px}
+#toast.show{opacity:1;transform:translateY(0)}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.template-btn{padding:6px 12px;border-radius:var(--radius);background:rgba(247,201,72,.1);border:1px solid rgba(247,201,72,.3);color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit;margin:4px;transition:all .15s}
+.template-btn:hover{background:rgba(247,201,72,.2)}
+@media print{
+  .app-header,.tabs,.actions,.btn,.no-print{display:none!important}
+  body{background:#fff;color:#000;font-size:12px}
+  .card{border:1px solid #ccc;break-inside:avoid;background:#fff}
+  .diary-body,.checklist-item-label,.report-title,.report-desc{color:#000}
+  .tab-panel{display:block!important}
+  .photo-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
+}
+@media(max-width:600px){
+  .form-row{grid-template-columns:1fr}
+  .tab-btn span.tab-label{display:none}
+  .stats-row{grid-template-columns:1fr 1fr}
+}
+
+  .back-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:none;transition:all .15s;font-family:inherit}
+  .back-btn:hover{border-color:var(--accent);color:var(--accent)}
+</style>
+</head>
+<body>
+<div id="lightbox">
+  <button id="lightbox-close" onclick="closeLightbox()">&#x2715;</button>
+  <img id="lightbox-img" src="" alt="">
+  <div id="lightbox-caption"></div>
+  <div id="lightbox-nav">
+    <button onclick="lightboxNav(-1)">&#8592; ก่อนหน้า</button>
+    <span id="lightbox-counter" style="color:var(--muted);font-size:12px;align-self:center"></span>
+    <button onclick="lightboxNav(1)">ถัดไป &#8594;</button>
+  </div>
+</div>
+
+<div class="app-header">
+  <div class="logo-badge">&#9889; EleXa</div>
+  <div>
+    <div class="app-title">EV Work Report &amp; Checklist</div>
+    <div class="app-subtitle">EGAT — กองติดตั้งและบำรุงรักษาสถานีอัดประจุไฟฟ้า</div>
+  </div>
+  <div class="header-right">
+  <a href="/" class="back-btn no-print"><i class="ti ti-arrow-left"></i> กลับ Dashboard</a>
+    <div class="date-badge" id="live-date"></div>
+    <button class="btn btn-info btn-sm no-print" onclick="printReport()"><i class="ti ti-printer"></i> Print PDF</button>
+    <button class="btn btn-outline btn-sm no-print" onclick="exportAll()"><i class="ti ti-download"></i> Export JSON</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs no-print">
+    <button class="tab-btn active" onclick="switchTab('diary',this)"><i class="ti ti-notebook"></i><span class="tab-label">Diary Report</span></button>
+    <button class="tab-btn" onclick="switchTab('report',this)"><i class="ti ti-file-report"></i><span class="tab-label">รายงานงาน</span></button>
+    <button class="tab-btn" onclick="switchTab('checklist',this)"><i class="ti ti-checklist"></i><span class="tab-label">Checklist</span></button>
+    <button class="tab-btn" onclick="switchTab('summary',this)"><i class="ti ti-chart-bar"></i><span class="tab-label">ภาพรวม</span></button>
+  </div>
+
+  <!-- DIARY -->
+  <div id="tab-diary" class="tab-panel active">
+    <div class="card no-print">
+      <div class="card-header"><i class="ti ti-pencil card-icon"></i><span class="card-title">บันทึกประจำวัน (Daily Diary)</span></div>
+      <div class="form-row">
+        <div><label>วันที่</label><input type="date" id="d-date"></div>
+        <div><label>โครงการ / สถานี</label><input type="text" id="d-project" placeholder="เช่น Bang Saen, Shell Surin"></div>
+      </div>
+      <div class="form-row">
+        <div><label>สถานที่ปฏิบัติงาน</label><input type="text" id="d-location" placeholder="เช่น นิคมฯ บางปู จ.สมุทรปราการ"></div>
+        <div><label>ผู้รายงาน</label><input type="text" id="d-reporter" value="นายพรวิรุฬ บุญยวรรณ"></div>
+      </div>
+      <div class="form-row">
+        <div><label>เวลาเริ่ม</label><input type="time" id="d-start" value="08:00"></div>
+        <div><label>เวลาเสร็จ</label><input type="time" id="d-end" value="17:00"></div>
+      </div>
+      <div><label>งานที่ดำเนินการ</label><textarea id="d-tasks" rows="4" placeholder="เช่น&#10;- ตรวจสอบการติดตั้ง MCCB 250A&#10;- ทดสอบ OCPP Connection กับ BackEV CSMS&#10;- ประชุมทีมติดตามความคืบหน้า"></textarea></div>
+      <div><label>ปัญหา / อุปสรรค</label><textarea id="d-issues" rows="2" placeholder="ระบุปัญหาที่พบ หรือ '-' ถ้าไม่มี"></textarea></div>
+      <div><label>แผนงานวันถัดไป</label><textarea id="d-next" rows="2" placeholder="งานที่วางแผนทำในวันถัดไป"></textarea></div>
+      <div><label>สถานะโดยรวม</label>
+        <select id="d-status">
+          <option value="inprogress">&#128309; กำลังดำเนินการ</option>
+          <option value="done">&#128994; เสร็จตามแผน</option>
+          <option value="blocked">&#128308; ติดปัญหา / ล่าช้า</option>
+          <option value="todo">&#9898; ยังไม่เริ่ม</option>
+        </select>
+      </div>
+      <div>
+        <label>แนบรูปภาพ <span id="d-photo-count" class="photo-count-badge" style="display:none"></span></label>
+        <div class="photo-upload-zone" id="d-drop-zone"
+          onclick="document.getElementById('d-photo-input').click()"
+          ondragover="handleDrag(event,this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event,'diary')">
+          <i class="ti ti-photo-plus"></i>
+          <p>ลากรูปมาวางที่นี่ หรือ <span>คลิกเพื่อเลือกไฟล์</span></p>
+          <p style="font-size:11px;margin-top:4px;">รองรับ JPG, PNG, WEBP &middot; สูงสุด 5MB ต่อรูป</p>
+        </div>
+        <input type="file" id="d-photo-input" accept="image/*" multiple style="display:none" onchange="handleFileSelect(event,'diary')">
+        <div class="photo-grid" id="d-photo-grid"></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="saveDiary()"><i class="ti ti-device-floppy"></i> บันทึก Diary</button>
+        <button class="btn btn-outline" onclick="clearDiary()"><i class="ti ti-x"></i> ล้างฟอร์ม</button>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title"><i class="ti ti-history"></i> รายการ Diary ที่บันทึก</div>
+      <button class="btn btn-danger btn-sm no-print" onclick="clearAllDiary()"><i class="ti ti-trash"></i> ล้างทั้งหมด</button>
+    </div>
+    <div id="diary-list"></div>
+  </div>
+
+  <!-- REPORT -->
+  <div id="tab-report" class="tab-panel">
+    <div class="card no-print">
+      <div class="card-header"><i class="ti ti-file-plus card-icon"></i><span class="card-title">สร้างรายงานงาน</span></div>
+      <div class="form-row">
+        <div><label>ประเภทรายงาน</label>
+          <select id="r-type">
+            <option value="survey">&#128269; Site Survey</option>
+            <option value="preconstruction">&#128208; Pre-Construction</option>
+            <option value="construction">&#127959; Construction / ติดตั้ง</option>
+            <option value="commissioning">&#9889; Commissioning / ทดสอบ</option>
+            <option value="maintenance">&#128295; Maintenance / บำรุงรักษา</option>
+            <option value="inspection">&#9989; Inspection / ตรวจรับ</option>
+          </select>
+        </div>
+        <div><label>วันที่รายงาน</label><input type="date" id="r-date"></div>
+      </div>
+      <div class="form-row">
+        <div><label>โครงการ</label><input type="text" id="r-project" placeholder="ชื่อโครงการ / เลขสัญญา"></div>
+        <div><label>ลูกค้า / เจ้าของโครงการ</label><input type="text" id="r-client" placeholder="เช่น Shell, Isuzu, CEGN"></div>
+      </div>
+      <div><label>สถานที่</label><input type="text" id="r-location" placeholder="ที่อยู่ / จังหวัด"></div>
+      <div class="form-row">
+        <div><label>ประเภทอุปกรณ์ EV</label><input type="text" id="r-equipment" placeholder="เช่น Autel 240kW DC, CEGN AC 7kW"></div>
+        <div><label>ผู้รับผิดชอบ</label><input type="text" id="r-assignee" value="นายพรวิรุฬ บุญยวรรณ"></div>
+      </div>
+      <div><label>รายละเอียดงาน</label><textarea id="r-detail" rows="5" placeholder="อธิบายรายละเอียดงานที่ทำ ผลการดำเนินงาน ข้อสังเกต"></textarea></div>
+      <div class="form-row">
+        <div><label>ผลการดำเนินงาน</label>
+          <select id="r-result">
+            <option value="pass">&#9989; ผ่าน / สำเร็จ</option>
+            <option value="partial">&#9888;&#65039; สำเร็จบางส่วน</option>
+            <option value="fail">&#10060; ไม่ผ่าน / ต้องแก้ไข</option>
+            <option value="pending">&#128336; รอผล</option>
+          </select>
+        </div>
+        <div><label>ความคืบหน้า (%)</label><input type="text" id="r-progress" placeholder="0-100"></div>
+      </div>
+      <div><label>ข้อเสนอแนะ / Next Action</label><textarea id="r-remark" rows="2" placeholder="สิ่งที่ต้องทำต่อ หรือข้อเสนอแนะ"></textarea></div>
+      <div>
+        <label>แนบรูปภาพหน้างาน <span id="r-photo-count" class="photo-count-badge" style="display:none"></span></label>
+        <div class="photo-upload-zone" id="r-drop-zone"
+          onclick="document.getElementById('r-photo-input').click()"
+          ondragover="handleDrag(event,this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event,'report')">
+          <i class="ti ti-camera"></i>
+          <p>ลากรูปมาวางที่นี่ หรือ <span>คลิกเพื่อเลือกไฟล์</span></p>
+          <p style="font-size:11px;margin-top:4px;">รองรับ JPG, PNG, WEBP &middot; สูงสุด 5MB ต่อรูป</p>
+        </div>
+        <input type="file" id="r-photo-input" accept="image/*" multiple style="display:none" onchange="handleFileSelect(event,'report')">
+        <div class="photo-grid" id="r-photo-grid"></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="saveReport()"><i class="ti ti-device-floppy"></i> บันทึกรายงาน</button>
+        <button class="btn btn-outline" onclick="clearReport()"><i class="ti ti-x"></i> ล้างฟอร์ม</button>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title"><i class="ti ti-files"></i> รายงานที่บันทึก</div>
+      <div style="display:flex;gap:6px;">
+        <select id="r-filter" onchange="renderReports()" style="width:auto;padding:5px 10px;font-size:12px;">
+          <option value="">ทุกประเภท</option>
+          <option value="survey">Site Survey</option>
+          <option value="preconstruction">Pre-Construction</option>
+          <option value="construction">Construction</option>
+          <option value="commissioning">Commissioning</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="inspection">Inspection</option>
+        </select>
+        <button class="btn btn-danger btn-sm no-print" onclick="clearAllReports()"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>
+    <div id="report-list"></div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div id="tab-checklist" class="tab-panel">
+    <div class="card no-print">
+      <div class="card-header"><i class="ti ti-list-check card-icon"></i><span class="card-title">Checklist ตรวจสอบงาน</span></div>
+      <div class="form-row">
+        <div><label>โครงการ / งาน</label><input type="text" id="cl-project" placeholder="ชื่อโครงการหรืองาน"></div>
+        <div><label>โหลด Template</label>
+          <div style="margin-top:5px;">
+            <button class="template-btn" onclick="loadTemplate('survey')">&#128269; Survey</button>
+            <button class="template-btn" onclick="loadTemplate('installation')">&#127959; ติดตั้ง</button>
+            <button class="template-btn" onclick="loadTemplate('commissioning')">&#9889; Commissioning</button>
+            <button class="template-btn" onclick="loadTemplate('handover')">&#9989; ส่งมอบ</button>
+          </div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="section-header" style="margin-bottom:8px;">
+        <div class="section-title" style="font-size:13px;">รายการตรวจ</div>
+        <button class="btn btn-outline btn-sm" onclick="addCheckGroup()"><i class="ti ti-plus"></i> เพิ่มหัวข้อ</button>
+      </div>
+      <div id="cl-groups"></div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="saveChecklist()"><i class="ti ti-device-floppy"></i> บันทึก Checklist</button>
+        <button class="btn btn-outline" onclick="newChecklist()"><i class="ti ti-plus"></i> สร้างใหม่</button>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title"><i class="ti ti-list"></i> Checklist ที่บันทึก</div>
+      <button class="btn btn-danger btn-sm no-print" onclick="clearAllChecklists()"><i class="ti ti-trash"></i></button>
+    </div>
+    <div id="checklist-saved-list"></div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div id="tab-summary" class="tab-panel">
+    <div class="stats-row" id="stats-row"></div>
+    <div class="card">
+      <div class="card-header"><i class="ti ti-activity card-icon"></i><span class="card-title">กิจกรรมล่าสุด</span></div>
+      <div id="activity-feed"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"><i class="ti ti-check" style="color:var(--accent2)"></i><span id="toast-msg"></span></div>
+
+<script>
+const KEYS={diary:'ev_diary_v3',reports:'ev_reports_v3',checklists:'ev_checklists_v3'};
+function load(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch{return[]}}
+function save(k,d){localStorage.setItem(k,JSON.stringify(d))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+let pendingPhotos={diary:[],report:[]};
+let lbImages=[],lbIdx=0;
+
+function toast(msg){const el=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800)}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');
+  if(name==='summary')renderSummary();
+}
+
+function updateDate(){document.getElementById('live-date').textContent=new Date().toLocaleDateString('th-TH',{weekday:'short',year:'numeric',month:'short',day:'numeric'})}
+updateDate();setInterval(updateDate,60000);
+
+(function(){const t=new Date().toISOString().split('T')[0];document.getElementById('d-date').value=t;document.getElementById('r-date').value=t})();
+
+// === PHOTOS ===
+function handleDrag(e,z){e.preventDefault();z.classList.add('drag-over')}
+function handleDragLeave(z){z.classList.remove('drag-over')}
+function handleDrop(e,ctx){e.preventDefault();document.getElementById((ctx==='diary'?'d':'r')+'-drop-zone').classList.remove('drag-over');processFiles(e.dataTransfer.files,ctx)}
+function handleFileSelect(e,ctx){processFiles(e.target.files,ctx);e.target.value=''}
+
+function processFiles(files,ctx){
+  Array.from(files).forEach(f=>{
+    if(!f.type.startsWith('image/')){toast('รองรับเฉพาะไฟล์ภาพเท่านั้น');return}
+    if(f.size>5*1024*1024){toast(f.name+' ขนาดเกิน 5MB');return}
+    const reader=new FileReader();
+    reader.onload=ev=>{pendingPhotos[ctx].push({id:uid(),data:ev.target.result,name:f.name,caption:''});renderPhotoGrid(ctx)};
+    reader.readAsDataURL(f);
+  });
+}
+
+function renderPhotoGrid(ctx){
+  const prefix=ctx==='diary'?'d':'r';
+  const grid=document.getElementById(prefix+'-photo-grid');
+  const countEl=document.getElementById(prefix+'-photo-count');
+  const photos=pendingPhotos[ctx];
+  if(!photos.length){grid.innerHTML='';countEl.style.display='none';return}
+  countEl.style.display='inline-flex';countEl.textContent=photos.length+' รูป';
+  grid.innerHTML=photos.map((p,i)=>`<div class="photo-thumb">
+    <img src="${p.data}" alt="${escHtml(p.name)}" onclick='openLbPending("${ctx}",${i})'>
+    <button class="remove-photo" onclick="removePendingPhoto('${ctx}','${p.id}')">&#x2715;</button>
+    <div class="photo-caption">${escHtml(p.name)}</div>
+  </div>`).join('');
+}
+
+function removePendingPhoto(ctx,id){pendingPhotos[ctx]=pendingPhotos[ctx].filter(p=>p.id!==id);renderPhotoGrid(ctx)}
+
+// === LIGHTBOX ===
+function openLbPending(ctx,idx){openLightbox(pendingPhotos[ctx],idx)}
+function openLbSaved(type,id,idx){
+  const key=type==='diary'?KEYS.diary:KEYS.reports;
+  const item=load(key).find(e=>e.id===id);
+  if(item&&item.photos)openLightbox(item.photos,idx);
+}
+function openLightbox(imgs,idx){lbImages=imgs;lbIdx=idx;document.getElementById('lightbox').classList.add('open');updateLb()}
+function updateLb(){const p=lbImages[lbIdx];document.getElementById('lightbox-img').src=p.data;document.getElementById('lightbox-caption').textContent=p.caption||p.name||'';document.getElementById('lightbox-counter').textContent=(lbIdx+1)+' / '+lbImages.length}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('open')}
+function lightboxNav(d){lbIdx=(lbIdx+d+lbImages.length)%lbImages.length;updateLb()}
+document.getElementById('lightbox').addEventListener('click',function(e){if(e.target===this)closeLightbox()});
+document.addEventListener('keydown',e=>{if(!document.getElementById('lightbox').classList.contains('open'))return;if(e.key==='Escape')closeLightbox();if(e.key==='ArrowLeft')lightboxNav(-1);if(e.key==='ArrowRight')lightboxNav(1)});
+
+// === DIARY ===
+const statusMap={inprogress:{label:'กำลังดำเนินการ',cls:'badge-inprogress'},done:{label:'เสร็จตามแผน',cls:'badge-done'},blocked:{label:'ติดปัญหา/ล่าช้า',cls:'badge-blocked'},todo:{label:'ยังไม่เริ่ม',cls:'badge-todo'}};
+
+function saveDiary(){
+  const e={id:uid(),date:document.getElementById('d-date').value,project:document.getElementById('d-project').value.trim(),location:document.getElementById('d-location').value.trim(),reporter:document.getElementById('d-reporter').value.trim(),start:document.getElementById('d-start').value,end:document.getElementById('d-end').value,tasks:document.getElementById('d-tasks').value.trim(),issues:document.getElementById('d-issues').value.trim(),next:document.getElementById('d-next').value.trim(),status:document.getElementById('d-status').value,photos:pendingPhotos.diary.slice(),createdAt:new Date().toISOString()};
+  if(!e.date||!e.tasks){toast('กรุณากรอกวันที่และรายละเอียดงาน');return}
+  const data=load(KEYS.diary);data.unshift(e);save(KEYS.diary,data);
+  pendingPhotos.diary=[];renderPhotoGrid('diary');renderDiaryList();clearDiary();toast('บันทึก Diary เรียบร้อย');
+}
+function clearDiary(){['d-project','d-location','d-tasks','d-issues','d-next'].forEach(id=>document.getElementById(id).value='');document.getElementById('d-status').value='inprogress';pendingPhotos.diary=[];renderPhotoGrid('diary')}
+function clearAllDiary(){if(!confirm('ลบ Diary ทั้งหมด?'))return;save(KEYS.diary,[]);renderDiaryList()}
+function deleteDiary(id){save(KEYS.diary,load(KEYS.diary).filter(e=>e.id!==id));renderDiaryList()}
+
+function renderPhotosInline(photos,id,type){
+  if(!photos||!photos.length)return'';
+  return`<div style="margin-top:10px;"><div style="font-size:11px;color:var(--muted);margin-bottom:6px;"><i class="ti ti-photo" style="font-size:12px;"></i> รูปภาพประกอบ (${photos.length} รูป)</div>
+  <div class="photo-grid">${photos.map((p,i)=>`<div class="photo-thumb"><img src="${p.data}" alt="${escHtml(p.name)}" onclick='openLbSaved("${type}","${id}",${i})'><div class="photo-caption">${escHtml(p.caption||p.name)}</div></div>`).join('')}</div></div>`;
+}
+
+function renderDiaryList(){
+  const data=load(KEYS.diary);const el=document.getElementById('diary-list');
+  if(!data.length){el.innerHTML='<div class="empty-state"><i class="ti ti-notebook"></i>ยังไม่มี Diary บันทึก</div>';return}
+  el.innerHTML=data.map(e=>{
+    const st=statusMap[e.status]||statusMap.todo;
+    const thDate=e.date?new Date(e.date+'T12:00').toLocaleDateString('th-TH',{weekday:'short',day:'numeric',month:'long',year:'numeric'}):e.date;
+    return`<div class="diary-entry">
+      <div class="diary-entry-header">
+        <div>
+          <div class="diary-date"><i class="ti ti-calendar" style="font-size:12px;"></i> ${thDate} &nbsp; ${e.start||''} &ndash; ${e.end||''}</div>
+          ${e.project?`<span class="diary-project-tag">${e.project}</span>`:''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="badge ${st.cls}">${st.label}</span>
+          ${e.photos&&e.photos.length?`<span class="photo-count-badge"><i class="ti ti-photo" style="font-size:11px;"></i> ${e.photos.length}</span>`:''}
+          <button class="btn btn-danger btn-sm no-print" onclick="deleteDiary('${e.id}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div class="diary-body">${escHtml(e.tasks)}</div>
+      ${e.issues&&e.issues!=='-'?`<div style="margin-top:8px;padding:8px 12px;background:rgba(248,81,73,.08);border-radius:6px;border-left:3px solid var(--danger);"><span style="font-size:11px;color:var(--danger);font-weight:600;">&#9888;&#65039; ปัญหา:</span><div class="diary-body" style="margin-top:4px;">${escHtml(e.issues)}</div></div>`:''}
+      ${e.next?`<div style="margin-top:8px;padding:8px 12px;background:rgba(247,201,72,.06);border-radius:6px;border-left:3px solid var(--accent);"><span style="font-size:11px;color:var(--accent);font-weight:600;">&#128203; แผนวันถัดไป:</span><div class="diary-body" style="margin-top:4px;">${escHtml(e.next)}</div></div>`:''}
+      ${renderPhotosInline(e.photos,e.id,'diary')}
+      <div class="diary-meta">
+        <span><i class="ti ti-user" style="font-size:12px;"></i> ${e.reporter||'-'}</span>
+        <span><i class="ti ti-map-pin" style="font-size:12px;"></i> ${e.location||'-'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// === REPORTS ===
+const typeConfig={survey:{label:'Site Survey',icon:'ti-map-search',cls:'icon-survey'},preconstruction:{label:'Pre-Construction',icon:'ti-ruler',cls:'icon-construction'},construction:{label:'Construction',icon:'ti-building-factory',cls:'icon-construction'},commissioning:{label:'Commissioning',icon:'ti-bolt',cls:'icon-commissioning'},maintenance:{label:'Maintenance',icon:'ti-tool',cls:'icon-maintenance'},inspection:{label:'Inspection',icon:'ti-clipboard-check',cls:'icon-commissioning'}};
+const resultMap={pass:{label:'ผ่าน / สำเร็จ',cls:'badge-done'},partial:{label:'สำเร็จบางส่วน',cls:'badge-inprogress'},fail:{label:'ต้องแก้ไข',cls:'badge-blocked'},pending:{label:'รอผล',cls:'badge-todo'}};
+
+function saveReport(){
+  const r={id:uid(),type:document.getElementById('r-type').value,date:document.getElementById('r-date').value,project:document.getElementById('r-project').value.trim(),client:document.getElementById('r-client').value.trim(),location:document.getElementById('r-location').value.trim(),equipment:document.getElementById('r-equipment').value.trim(),assignee:document.getElementById('r-assignee').value.trim(),detail:document.getElementById('r-detail').value.trim(),result:document.getElementById('r-result').value,progress:document.getElementById('r-progress').value.trim(),remark:document.getElementById('r-remark').value.trim(),photos:pendingPhotos.report.slice(),createdAt:new Date().toISOString()};
+  if(!r.project||!r.detail){toast('กรุณากรอกชื่อโครงการและรายละเอียด');return}
+  const data=load(KEYS.reports);data.unshift(r);save(KEYS.reports,data);
+  pendingPhotos.report=[];renderPhotoGrid('report');renderReports();clearReport();toast('บันทึกรายงานเรียบร้อย');
+}
+function clearReport(){['r-project','r-client','r-location','r-equipment','r-detail','r-progress','r-remark'].forEach(id=>document.getElementById(id).value='');pendingPhotos.report=[];renderPhotoGrid('report')}
+function clearAllReports(){if(!confirm('ลบรายงานทั้งหมด?'))return;save(KEYS.reports,[]);renderReports()}
+function deleteReport(id){save(KEYS.reports,load(KEYS.reports).filter(e=>e.id!==id));renderReports()}
+
+function renderReports(){
+  let data=load(KEYS.reports);const filter=document.getElementById('r-filter').value;
+  if(filter)data=data.filter(r=>r.type===filter);
+  const el=document.getElementById('report-list');
+  if(!data.length){el.innerHTML='<div class="empty-state"><i class="ti ti-file-off"></i>ไม่มีรายงาน</div>';return}
+  el.innerHTML=data.map(r=>{
+    const tc=typeConfig[r.type]||typeConfig.survey;const rs=resultMap[r.result]||resultMap.pending;
+    const thDate=r.date?new Date(r.date+'T12:00').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}):'-';
+    return`<div class="report-item">
+      <div class="report-type-icon ${tc.cls}"><i class="ti ${tc.icon}"></i></div>
+      <div class="report-content">
+        <div class="report-title">${escHtml(r.project)} &mdash; ${tc.label}</div>
+        <div class="report-desc">${escHtml(r.client||'-')} &middot; ${escHtml(r.location||'-')} &middot; ${escHtml(r.equipment||'-')}</div>
+        <div style="margin-top:8px;font-size:13px;color:var(--text);white-space:pre-wrap;">${escHtml(r.detail)}</div>
+        ${r.remark?`<div style="margin-top:6px;font-size:12px;color:var(--muted);">&#128221; ${escHtml(r.remark)}</div>`:''}
+        ${renderPhotosInline(r.photos,r.id,'report')}
+        <div class="report-footer">
+          <span class="badge ${rs.cls}">${rs.label}</span>
+          ${r.progress?`<span class="badge badge-todo">ความคืบหน้า ${r.progress}%</span>`:''}
+          <span style="font-size:11px;color:var(--muted);"><i class="ti ti-calendar" style="font-size:11px;"></i> ${thDate}</span>
+          <span style="font-size:11px;color:var(--muted);"><i class="ti ti-user" style="font-size:11px;"></i> ${escHtml(r.assignee||'-')}</span>
+          <button class="btn btn-danger btn-sm no-print" style="margin-left:auto;" onclick="deleteReport('${r.id}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// === CHECKLIST ===
+let clGroups=[];
+const templates={
+  survey:[{title:'1. ข้อมูลพื้นที่',items:['ตรวจสอบพิกัด GPS ที่ถูกต้อง','วัดพื้นที่ติดตั้ง (กว้าง x ยาว x สูง)','ถ่ายภาพสภาพแวดล้อมรอบด้าน (ไม่น้อยกว่า 8 ทิศ)','บันทึกสภาพพื้น (คอนกรีต/ยางมะตอย/อื่นๆ)','ตรวจสอบร่มเงา / สิ่งกีดขวาง']},{title:'2. ระบบไฟฟ้า',items:['ตรวจสอบแรงดัน PEA (3 เฟส 416V ±5%)','ยืนยันขนาดหม้อแปลงที่ใช้งานอยู่','ตรวจสอบขนาด Main Breaker / MDB','ระบุตำแหน่ง Meter (PEA)','บันทึกระยะห่าง MDB ถึงจุดติดตั้ง']},{title:'3. โครงสร้างพื้นฐาน',items:['ตรวจสอบเส้นทางเดินสาย','ระบุตำแหน่งท่อร้อยสาย','ตรวจสอบสภาพเสาหรือโครงสร้างรับน้ำหนัก','บันทึกอุปสรรค (ท่อ, สาย, โครงสร้างอื่น)']}],
+  installation:[{title:'1. ก่อนเริ่มติดตั้ง',items:['ตรวจรับอุปกรณ์ครบตามรายการ','ตรวจสอบความเสียหายระหว่างขนส่ง','เตรียมเอกสาร: TOR, SLD, Drawing','ยืนยัน Safety Briefing ทีมช่าง']},{title:'2. งานไฟฟ้า',items:['ติดตั้ง MCCB ถูกขนาด (AT/AF)','เดินสาย CV ตามที่ออกแบบ (พร้อม Tropical Derating)','ต่อ Earth/Ground ทุกจุด (TN-S)','ติดตั้ง SPD Class I+II ตามมาตรฐาน วสท.','ทำ Label สาย และ Tag อุปกรณ์']},{title:'3. งานโยธา / ภูมิทัศน์',items:['หล่อฐาน Charger ได้ขนาด','ฝัง Conduit ร้อยสายใต้ดิน','ติดตั้งป้ายจราจร / เส้นจราจร','ทำ Canopy / หลังคา (ถ้ามี)']}],
+  commissioning:[{title:'1. Pre-Power On',items:['ตรวจสอบ Insulation Resistance (>1 MΩ)','ตรวจสอบ Polarity ถูกต้อง','ตรวจสอบขนาดฟิวส์ / Breaker','Verify Earth continuity','ตรวจสอบ Labeling ครบ']},{title:'2. Power On & Function Test',items:['จ่ายไฟ — ตรวจ Voltage 3 เฟส','ทดสอบ E-Stop ทำงานถูกต้อง','ทดสอบ OCPP 1.6J Connect กับ CSMS (BackEV)','ทดสอบ Start/Stop Transaction','ทดสอบ RFID Card / QR Code']},{title:'3. Load Test',items:['ทดสอบการชาร์จจริงกับรถ EV','วัดแรงดัน / กระแสขณะชาร์จ','บันทึก kWh ที่จ่าย','ตรวจ Thermal (ไม่ร้อนผิดปกติ)','ตรวจสอบ Metering ตรงกับ CSMS']}],
+  handover:[{title:'1. เอกสาร',items:['As-Built Drawing ครบ','Test Record / Commissioning Report','คู่มือการใช้งาน (ภาษาไทย)','Warranty Certificate','ใบส่งมอบงาน (ลงนามทั้งสองฝ่าย)']},{title:'2. อุปกรณ์ / อะไหล่',items:['สายชาร์จ (Type 2 / CCS2 / CHAdeMO) ครบ','Spare Key / Card','Spare Fuse / Breaker','อุปกรณ์ทำความสะอาด']},{title:'3. การอบรม',items:['อธิบายการใช้งาน Charger ให้เจ้าของ','สาธิตการแก้ปัญหาเบื้องต้น','แนะนำช่องทางแจ้งซ่อม / Contact EleXa Support']}]
+};
+
+function loadTemplate(n){const t=templates[n];if(!t)return;clGroups=t.map(g=>({id:uid(),title:g.title,items:g.items.map(i=>({id:uid(),text:i,checked:false}))}));renderChecklistEditor();toast('โหลด Template '+n+' แล้ว')}
+function addCheckGroup(){const t=prompt('ชื่อหัวข้อ:');if(!t)return;clGroups.push({id:uid(),title:t,items:[]});renderChecklistEditor()}
+function addCheckItem(gid){const t=prompt('รายการตรวจสอบ:');if(!t)return;const g=clGroups.find(g=>g.id===gid);if(g)g.items.push({id:uid(),text:t,checked:false});renderChecklistEditor()}
+function toggleEditorItem(gid,iid){const g=clGroups.find(g=>g.id===gid);if(!g)return;const it=g.items.find(i=>i.id===iid);if(it)it.checked=!it.checked;renderChecklistEditor()}
+function removeEditorItem(gid,iid){const g=clGroups.find(g=>g.id===gid);if(g)g.items=g.items.filter(i=>i.id!==iid);renderChecklistEditor()}
+function removeGroup(gid){clGroups=clGroups.filter(g=>g.id!==gid);renderChecklistEditor()}
+
+function renderChecklistEditor(){
+  const el=document.getElementById('cl-groups');
+  if(!clGroups.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">เลือก Template หรือกด "+ เพิ่มหัวข้อ"</div>';return}
+  el.innerHTML=clGroups.map(g=>{
+    const done=g.items.filter(i=>i.checked).length,total=g.items.length,pct=total?Math.round(done/total*100):0;
+    return`<div class="checklist-group" style="margin-bottom:10px;">
+      <div class="checklist-group-header">
+        <span class="checklist-group-title"><i class="ti ti-folder" aria-hidden="true"></i>${escHtml(g.title)}</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="checklist-progress-text">${done}/${total}</span>
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();addCheckItem('${g.id}')"><i class="ti ti-plus"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();removeGroup('${g.id}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div class="checklist-items">
+        <div class="progress-bar-wrap" style="margin-bottom:8px;"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+        ${g.items.map(it=>`<div class="checklist-item ${it.checked?'checked-item':''}" onclick="toggleEditorItem('${g.id}','${it.id}')">
+          <div class="check-box ${it.checked?'checked':''}"></div>
+          <span class="checklist-item-label">${escHtml(it.text)}</span>
+          <button class="btn btn-danger btn-sm" style="padding:2px 6px;" onclick="event.stopPropagation();removeEditorItem('${g.id}','${it.id}')"><i class="ti ti-x"></i></button>
+        </div>`).join('')}
+        ${!g.items.length?'<div style="font-size:12px;color:var(--muted);padding:8px 0;">ยังไม่มีรายการ — กด + เพิ่ม</div>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveChecklist(){
+  const project=document.getElementById('cl-project').value.trim();
+  if(!project){toast('กรุณากรอกชื่อโครงการ');return}
+  if(!clGroups.length){toast('ยังไม่มีรายการ Checklist');return}
+  const cl={id:uid(),project,groups:JSON.parse(JSON.stringify(clGroups)),createdAt:new Date().toISOString()};
+  const data=load(KEYS.checklists);data.unshift(cl);save(KEYS.checklists,data);renderSavedChecklists();toast('บันทึก Checklist เรียบร้อย');
+}
+function newChecklist(){clGroups=[];document.getElementById('cl-project').value='';renderChecklistEditor()}
+function toggleSavedItem(clId,gid,iid){
+  const data=load(KEYS.checklists);const cl=data.find(c=>c.id===clId);if(!cl)return;
+  const g=cl.groups.find(g=>g.id===gid);if(!g)return;
+  const it=g.items.find(i=>i.id===iid);if(it)it.checked=!it.checked;
+  save(KEYS.checklists,data);renderSavedChecklists();
+}
+function deleteChecklist(id){save(KEYS.checklists,load(KEYS.checklists).filter(c=>c.id!==id));renderSavedChecklists()}
+function clearAllChecklists(){if(!confirm('ลบ Checklist ทั้งหมด?'))return;save(KEYS.checklists,[]);renderSavedChecklists()}
+
+function renderSavedChecklists(){
+  const data=load(KEYS.checklists);const el=document.getElementById('checklist-saved-list');
+  if(!data.length){el.innerHTML='<div class="empty-state"><i class="ti ti-checklist"></i>ยังไม่มี Checklist</div>';return}
+  el.innerHTML=data.map(cl=>{
+    const tot=cl.groups.reduce((s,g)=>s+g.items.length,0);
+    const done=cl.groups.reduce((s,g)=>s+g.items.filter(i=>i.checked).length,0);
+    const pct=tot?Math.round(done/tot*100):0;
+    const thDate=new Date(cl.createdAt).toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+    return`<div class="card" style="margin-bottom:12px;">
+      <div class="card-header" style="margin-bottom:10px;padding-bottom:10px;">
+        <i class="ti ti-checklist card-icon"></i><span class="card-title">${escHtml(cl.project)}</span>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+          <span style="font-size:12px;color:var(--muted);">${thDate}</span>
+          <span class="badge ${pct===100?'badge-done':'badge-inprogress'}">${pct}%</span>
+          <button class="btn btn-danger btn-sm no-print" onclick="deleteChecklist('${cl.id}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div class="progress-bar-wrap" style="margin-bottom:12px;"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      ${cl.groups.map(g=>{
+        const gd=g.items.filter(i=>i.checked).length,gt=g.items.length,gp=gt?Math.round(gd/gt*100):0;
+        return`<div class="checklist-group" style="margin-bottom:8px;">
+          <div class="checklist-group-header" style="cursor:default;">
+            <span class="checklist-group-title" style="font-size:12px;"><i class="ti ti-folder" aria-hidden="true"></i>${escHtml(g.title)}</span>
+            <span class="checklist-progress-text">${gd}/${gt} &middot; ${gp}%</span>
+          </div>
+          <div class="checklist-items">
+            ${g.items.map(it=>`<div class="checklist-item ${it.checked?'checked-item':''}" onclick="toggleSavedItem('${cl.id}','${g.id}','${it.id}')">
+              <div class="check-box ${it.checked?'checked':''}"></div>
+              <span class="checklist-item-label">${escHtml(it.text)}</span>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+// === SUMMARY ===
+function renderSummary(){
+  const diaries=load(KEYS.diary),reports=load(KEYS.reports),checklists=load(KEYS.checklists);
+  const doneR=reports.filter(r=>r.result==='pass').length;
+  const allCL=checklists.reduce((s,c)=>s+c.groups.reduce((s2,g)=>s2+g.items.length,0),0);
+  const doneCL=checklists.reduce((s,c)=>s+c.groups.reduce((s2,g)=>s2+g.items.filter(i=>i.checked).length,0),0);
+  const totalPics=diaries.reduce((s,d)=>s+(d.photos?d.photos.length:0),0)+reports.reduce((s,r)=>s+(r.photos?r.photos.length:0),0);
+  document.getElementById('stats-row').innerHTML=`
+    <div class="stat-card"><div class="stat-value">${diaries.length}</div><div class="stat-label">Diary บันทึก</div></div>
+    <div class="stat-card"><div class="stat-value">${reports.length}</div><div class="stat-label">รายงานงาน</div></div>
+    <div class="stat-card"><div class="stat-value">${doneR}</div><div class="stat-label">งานเสร็จสมบูรณ์</div></div>
+    <div class="stat-card"><div class="stat-value">${allCL?Math.round(doneCL/allCL*100):0}%</div><div class="stat-label">Checklist สำเร็จ</div></div>
+    <div class="stat-card"><div class="stat-value">${totalPics}</div><div class="stat-label">รูปภาพทั้งหมด</div></div>`;
+  const acts=[];
+  diaries.slice(0,5).forEach(d=>acts.push({date:d.createdAt,icon:'ti-notebook',color:'var(--accent)',text:'Diary: '+(d.project||'-')+' — '+(statusMap[d.status]?.label||'-')+(d.photos?.length?' 📷'+d.photos.length:'')}));
+  reports.slice(0,5).forEach(r=>acts.push({date:r.createdAt,icon:'ti-file-report',color:'#58a6ff',text:'รายงาน '+(typeConfig[r.type]?.label||'-')+': '+(r.project||'-')+(r.photos?.length?' 📷'+r.photos.length:'')}));
+  checklists.slice(0,3).forEach(c=>acts.push({date:c.createdAt,icon:'ti-checklist',color:'#3fb950',text:'Checklist: '+c.project}));
+  acts.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const feed=document.getElementById('activity-feed');
+  if(!acts.length){feed.innerHTML='<div class="empty-state"><i class="ti ti-activity"></i>ยังไม่มีกิจกรรม</div>';return}
+  feed.innerHTML=acts.slice(0,10).map(a=>{
+    const dt=new Date(a.date).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    return`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <i class="ti ${a.icon}" style="color:${a.color};font-size:18px;flex-shrink:0;" aria-hidden="true"></i>
+      <div style="flex:1;font-size:13px;">${escHtml(a.text)}</div>
+      <div style="font-size:11px;color:var(--muted);flex-shrink:0;">${dt}</div>
+    </div>`;
+  }).join('');
+}
+
+// === PRINT ===
+function printReport(){
+  const activeTab=document.querySelector('.tab-panel.active');
+  const name=activeTab?activeTab.id.replace('tab-',''):'';
+  const map={diary:'Diary Report',report:'รายงานงาน',checklist:'Checklist',summary:'ภาพรวม'};
+  document.title='EV Report — '+(map[name]||'')+' — '+new Date().toLocaleDateString('th-TH');
+  window.print();
+  document.title='EV Work Report & Checklist — EleXa by EGAT';
+}
+
+// === EXPORT ===
+function exportAll(){
+  const data={exportedAt:new Date().toISOString(),version:'3',diary:load(KEYS.diary),reports:load(KEYS.reports),checklists:load(KEYS.checklists)};
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='ev_work_data_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('Export JSON สำเร็จ');
+}
+
+function escHtml(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// Init
+renderDiaryList();renderReports();renderChecklistEditor();renderSavedChecklists();
+</script>
+</body>
+</html>
