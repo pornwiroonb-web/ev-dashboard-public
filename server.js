@@ -509,10 +509,19 @@ function broadcast(payload) {
     client.write(message);
   }
 }
-
 async function serveStatic(res, requestPath) {
-  const filePath = path.join(publicDir, path.basename(requestPath));
+  const safePath = path.normalize(requestPath).replace(/^(\.\.[/\\])+/, "");
+  let filePath = path.join(publicDir, safePath);
+  try {
+    const stat = await fs.stat(filePath);
+    if (stat.isDirectory()) {
+      filePath = path.join(filePath, "index.html");
+    }
+  } catch {
+    // not found — serveFile will handle 404
+  }
   return serveFile(res, filePath);
+}
 }
 
 async function serveFile(res, filePath) {
