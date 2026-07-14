@@ -12,6 +12,7 @@ const dataRoot = process.env.APP_DATA_DIR ? path.resolve(process.env.APP_DATA_DI
 const dataDir = dataRoot;
 const uploadsDir = path.join(dataRoot, "uploads");
 const stateFile = path.join(dataDir, "state.json");
+const plannerFile = path.join(dataDir, "planner.json");
 const inviteSecret = process.env.EV_INVITE_SECRET || "ev-dashboard-dev-secret";
 const authCookieName = "ev_dashboard_auth";
 const authMaxAgeSeconds = 60 * 60 * 24 * 30;
@@ -176,6 +177,18 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, updated);
     }
 
+    if (req.method === "GET" && url.pathname === "/api/planner") {
+      if (!isAuthenticated(req)) return unauthorized(res);
+      return sendJson(res, 200, await loadPlanner());
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/planner") {
+      if (!isAuthenticated(req)) return unauthorized(res);
+      const body = await readJson(req);
+      const saved = await savePlanner(body);
+      return sendJson(res, 200, saved);
+    }
+
     if (req.method === "GET" && url.pathname.startsWith("/uploads/")) {
       return serveFile(res, path.join(uploadsDir, path.basename(url.pathname)));
     }
@@ -221,6 +234,21 @@ function normalizeState(input) {
 async function saveState() {
   state.updatedAt = new Date().toISOString();
   await fs.writeFile(stateFile, JSON.stringify(state, null, 2), "utf8");
+}
+
+async function loadPlanner() {
+  try {
+    const raw = await fs.readFile(plannerFile, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+async function savePlanner(body) {
+  await fs.mkdir(dataDir, { recursive: true });
+  await fs.writeFile(plannerFile, JSON.stringify(body, null, 2), "utf8");
+  return { ok: true };
 }
 
 function getAuthStatus(req) {
