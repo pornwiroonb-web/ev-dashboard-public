@@ -345,22 +345,19 @@ function defaultPhasesFor(project){
   return SEED[project.id].map(row=>({ name:row[0], status:row[1], start:row[2], end:row[3], note:row[4] }));
 }
 
-// ข้อมูลทั้งหมดถูกเก็บไว้ที่ฝั่งเซิร์ฟเวอร์ (data/planner.json บน Railway)
-// ผ่าน API /api/planner ซึ่งใช้คุกกี้ล็อกอิน (invite code) เดียวกับหน้า dashboard หลัก
+// ข้อมูลทั้งหมดถูกเก็บไว้ใน Google Sheet ผ่าน Google Apps Script (Web App)
+// แก้ URL ด้านล่างเป็น Web app URL ที่ได้จากการ Deploy Apps Script (ลงท้ายด้วย /exec)
+const APPS_SCRIPT_URL = https://script.google.com/macros/s/AKfycbxtpf9aNev-BTCPj2WckvLukuZJHlrBnmOFnvo7O2mS_5wQpsKzfYA1pmbGX_cAJ8nq6A/exec
 async function fetchPlannerFromServer(){
-  const res = await fetch('/api/planner', { credentials:'same-origin' });
-  if(res.status === 401){
-    window.location.href = '/';
-    return null;
-  }
+  const res = await fetch(APPS_SCRIPT_URL, { method:'GET' });
   if(!res.ok) throw new Error('load failed: ' + res.status);
   return res.json();
 }
 async function savePlannerToServer(payload){
-  const res = await fetch('/api/planner', {
+  // ใช้ Content-Type: text/plain เพื่อเลี่ยง CORS preflight ที่ Apps Script Web App ไม่รองรับ
+  const res = await fetch(APPS_SCRIPT_URL, {
     method:'POST',
-    credentials:'same-origin',
-    headers:{ 'Content-Type':'application/json' },
+    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
   });
   if(!res.ok) throw new Error('save failed: ' + res.status);
@@ -369,8 +366,10 @@ async function savePlannerToServer(payload){
 
 async function saveProject(id, phases){
   DATA[id] = phases;
+  isSaving = true;
   try{ await savePlannerToServer({ version: SEED_VERSION, data: DATA }); }
   catch(e){ console.error('save failed', e); }
+  finally{ isSaving = false; }
 }
 
 async function loadAll(){
@@ -635,10 +634,28 @@ function renderAll(){
   else if(state.view==='detail') renderDetail();
 }
 
+/* ============ AUTO-REFRESH (near real-time) ============ */
+// ดึงข้อมูลใหม่จาก Google Sheet ทุก 20 วินาที เพื่อให้เห็นความเปลี่ยนแปลงจากคนอื่นโดยไม่ต้องกด reload เอง
+// จะไม่ auto-refresh ทับขณะที่กำลังแก้ไขอยู่หน้ารายละเอียดโครงการ (state.view==='detail') เพื่อกันข้อมูลที่พิมพ์ค้างหาย
+const AUTO_REFRESH_MS = 20000;
+let isSaving = false;
+
+async function autoRefresh(){
+  if(state.view === 'detail' || isSaving) return; // อย่าไปแทรกตอนกำลังแก้ไข/บันทึกอยู่
+  try{
+    const remote = await fetchPlannerFromServer();
+    if(remote && remote.data && Object.keys(remote.data).length){
+      DATA = remote.data;
+      renderAll();
+    }
+  }catch(e){ console.error('auto-refresh failed', e); }
+}
+
 (async function init(){
   document.getElementById('main').innerHTML = '<div style="padding:40px;color:var(--muted)">กำลังโหลดข้อมูลแผนงาน...</div>';
   await loadAll();
   renderAll();
+  setInterval(autoRefresh, AUTO_REFRESH_MS);
 })();
 </script>
 </body>
