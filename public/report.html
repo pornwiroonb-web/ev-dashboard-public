@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EV Work Report & Checklist — EleXa by EGAT</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);--text:#e6edf3;--muted:#7d8590;--accent:#f7c948;--accent2:#2ea043;--accent3:#388bfd;--danger:#f85149;--warning:#d29922;--radius:8px;--radius-lg:12px}
+:root{--bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);--text:#e6edf3;--muted:#7d8590;--accent:#f7c948;--accent2:#2ea043;--accent3:#388bfd;--danger:#f85149;--warning:#d29922;--radius:8px;--radius-lg:12px;--egat-navy:#003087;--egat-navy-dark:#001d54;--egat-yellow:#F5C400;--egat-green:#1a8a4a}
+.print-only{display:none}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Noto Sans Thai',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
 .app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
@@ -102,13 +105,82 @@ textarea{resize:vertical;min-height:80px}select option{background:#1c2128}
 .divider{border:none;border-top:1px solid var(--border);margin:16px 0}
 .template-btn{padding:6px 12px;border-radius:var(--radius);background:rgba(247,201,72,.1);border:1px solid rgba(247,201,72,.3);color:var(--accent);font-size:12px;cursor:pointer;font-family:inherit;margin:4px;transition:all .15s}
 .template-btn:hover{background:rgba(247,201,72,.2)}
+/* ===================== PRINT — EGAT EV TOTAL SOLUTION THEME ===================== */
+#print-header{
+  background:linear-gradient(135deg,var(--egat-navy) 0%,var(--egat-navy-dark) 100%);
+  color:#fff;border-radius:10px;padding:20px 24px;margin-bottom:20px;position:relative;overflow:hidden;
+}
+#print-header .ph-brandrow{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2}
+#print-header .ph-brand{display:flex;align-items:center;gap:10px}
+#print-header .ph-box{width:34px;height:34px;background:var(--egat-yellow);color:var(--egat-navy);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
+#print-header .ph-sub{font-size:11px;color:rgba(255,255,255,.8);font-weight:400}
+#print-header b{font-size:14px}
+#print-header .ph-doctag{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);padding:4px 12px;border-radius:16px;font-size:11px}
+#print-header .ph-title{margin-top:14px;font-size:19px;font-weight:700;position:relative;z-index:2}
+#print-header .ph-meta{margin-top:6px;font-size:11.5px;color:rgba(255,255,255,.85);position:relative;z-index:2}
+
+#print-signoff{display:flex;gap:30px;margin-top:26px;padding-top:6px}
+#print-signoff .sign-box{flex:1;text-align:center;font-size:11.5px;color:#111}
+#print-signoff .sign-line{border-bottom:1px dashed #9aa2b5;height:42px}
+#print-signoff .sign-role{margin-top:8px;font-weight:700;color:var(--egat-navy);font-size:12.5px}
+#print-signoff .sign-name{margin-top:4px;color:#555}
+#print-signoff .sign-date{margin-top:6px;color:#555;font-size:11px}
+
+#print-footer{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;font-size:9.5px;color:#777;border-top:1px solid #dfe3ee;padding:6px 4px;background:#fff}
+
 @media print{
-  .app-header,.tabs,.actions,.btn,.no-print{display:none!important}
-  body{background:#fff;color:#000;font-size:12px}
-  .card{border:1px solid #ccc;break-inside:avoid;background:#fff}
-  .diary-body,.checklist-item-label,.report-title,.report-desc{color:#000}
-  .tab-panel{display:block!important}
-  .photo-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
+  .app-header,.tabs,.actions,.btn,.no-print,.photo-upload-zone,#lightbox{display:none!important}
+  .print-only{display:block!important}
+  @page{margin:14mm 12mm 16mm 12mm}
+  html,body{background:#fff;color:#111;font-size:12.5px;font-family:'Sarabun',sans-serif}
+  .container{max-width:100%;padding:0;margin:0}
+  .tab-panel{display:none!important}
+  .tab-panel.active{display:block!important}
+
+  .card{border:1px solid #dfe3ee;background:#fff;break-inside:avoid;box-shadow:none}
+  .card-title,.section-title{color:var(--egat-navy)!important}
+  .card-icon{color:var(--egat-yellow)!important}
+  .section-header{border-bottom:2px solid var(--egat-navy);padding-bottom:6px;margin-bottom:12px}
+
+  /* KPI cards — Summary tab */
+  .stats-row{display:flex;gap:10px;margin-bottom:18px}
+  .stat-card{flex:1;background:#fff!important;border:1px solid #dfe3ee!important;border-top:4px solid var(--egat-navy)!important;border-radius:8px;break-inside:avoid}
+  .stat-value{color:var(--egat-navy)!important;font-size:22px}
+  .stat-label{color:#555!important}
+
+  /* Diary / Report cards */
+  .diary-entry,.report-item{background:#fff!important;border:1px solid #dfe3ee!important;border-top:3px solid var(--egat-navy)!important;break-inside:avoid;margin-bottom:12px}
+  .diary-body,.checklist-item-label,.report-title,.report-desc,.diary-date,.report-desc,.diary-meta,.report-footer span{color:#222!important}
+  .diary-date{color:var(--egat-navy)!important;font-weight:600}
+  .diary-project-tag{background:#fff3cd!important;color:#8a6100!important;border:1px solid #f0dc9e}
+  .report-type-icon{background:#eef1f8!important;color:var(--egat-navy)!important}
+
+  /* Badges */
+  .badge-inprogress{background:#fff3cd!important;color:#8a6100!important;border:1px solid #f0dc9e}
+  .badge-done{background:#e3f6ea!important;color:var(--egat-green)!important;border:1px solid #a8e0bc}
+  .badge-blocked{background:#fde2e1!important;color:#b3261e!important;border:1px solid #f3b4b1}
+  .badge-todo{background:#eef0f5!important;color:#555!important;border:1px solid #dfe3ee}
+
+  /* Checklist */
+  .checklist-group{background:#fff!important;border:1px solid #dfe3ee!important;break-inside:avoid;margin-bottom:10px}
+  .checklist-group-header{background:#f4f6fb!important;border-bottom:2px solid var(--egat-navy)!important}
+  .checklist-group-title{color:var(--egat-navy)!important}
+  .checklist-progress-text{color:#555!important}
+  .check-box{border-color:#9aa2b5!important}
+  .check-box.checked{background:var(--egat-green)!important;border-color:var(--egat-green)!important}
+  .progress-bar-wrap{background:#e6e9f2!important}
+  .progress-bar-fill{background:linear-gradient(90deg,var(--egat-yellow),#ffd94d)!important}
+
+  /* Photos */
+  .photo-grid{grid-template-columns:repeat(4,1fr)!important;gap:8px}
+  .photo-thumb{border:1px solid #dfe3ee!important;break-inside:avoid}
+  .photo-thumb .remove-photo{display:none!important}
+  .photo-caption{background:rgba(0,0,0,.55)!important}
+
+  /* Empty state should not print */
+  .empty-state{display:none!important}
+
+  body{padding-bottom:26px}
 }
 @media(max-width:600px){
   .form-row{grid-template-columns:1fr}
@@ -147,6 +219,18 @@ textarea{resize:vertical;min-height:80px}select option{background:#1c2128}
 </div>
 
 <div class="container">
+  <div id="print-header" class="print-only">
+    <div class="ph-brandrow">
+      <div class="ph-brand">
+        <div class="ph-box">E</div>
+        <div><b>Total Solution by EGAT EV</b><div class="ph-sub">EV Charging Station Solutions</div></div>
+      </div>
+      <div class="ph-doctag" id="print-doctag">รายงานภาพรวมโครงการ</div>
+    </div>
+    <div class="ph-title" id="print-title-text"></div>
+    <div class="ph-meta" id="print-meta-text"></div>
+  </div>
+
   <div class="tabs no-print">
     <button class="tab-btn active" onclick="switchTab('diary',this)"><i class="ti ti-notebook"></i><span class="tab-label">Diary Report</span></button>
     <button class="tab-btn" onclick="switchTab('report',this)"><i class="ti ti-file-report"></i><span class="tab-label">รายงานงาน</span></button>
@@ -319,6 +403,26 @@ textarea{resize:vertical;min-height:80px}select option{background:#1c2128}
       <div class="card-header"><i class="ti ti-activity card-icon"></i><span class="card-title">กิจกรรมล่าสุด</span></div>
       <div id="activity-feed"></div>
     </div>
+  </div>
+
+  <div id="print-signoff" class="print-only">
+    <div class="sign-box">
+      <div class="sign-line"></div>
+      <div class="sign-role">ผู้รายงาน</div>
+      <div class="sign-name" id="print-sign-reporter">( .............................................. )</div>
+      <div class="sign-date">วันที่ ................................</div>
+    </div>
+    <div class="sign-box">
+      <div class="sign-line"></div>
+      <div class="sign-role">ผู้ตรวจสอบ</div>
+      <div class="sign-name">( .............................................. )</div>
+      <div class="sign-date">วันที่ ................................</div>
+    </div>
+  </div>
+
+  <div id="print-footer" class="print-only">
+    <span>Total Solution by EGAT EV</span>
+    <span id="print-footer-date"></span>
   </div>
 </div>
 
@@ -615,7 +719,36 @@ function renderSummary(){
 function printReport(){
   const activeTab=document.querySelector('.tab-panel.active');
   const name=activeTab?activeTab.id.replace('tab-',''):'';
-  const map={diary:'Diary Report',report:'รายงานงาน',checklist:'Checklist',summary:'ภาพรวม'};
+  const map={diary:'Diary บันทึกหน้างาน',report:'รายงานผลการดำเนินงาน',checklist:'Checklist ตรวจรับงาน',summary:'รายงานภาพรวมโครงการ'};
+  const today=new Date().toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  let titleText='EGAT EV Total Solution',metaText='พิมพ์เมื่อ '+today,reporterName='';
+
+  if(name==='diary'){
+    const d=load(KEYS.diary)[0];
+    titleText=(d&&d.project)?d.project:'บันทึกประจำวัน (Diary)';
+    metaText=(d?('สถานที่: '+(d.location||'-')+' &nbsp;|&nbsp; ผู้รายงาน: '+(d.reporter||'-')+' &nbsp;|&nbsp; '):'')+'พิมพ์เมื่อ '+today;
+    reporterName=d?d.reporter:'';
+  }else if(name==='report'){
+    const r=load(KEYS.reports)[0];
+    titleText=(r&&r.project)?r.project:'รายงานผลการดำเนินงาน';
+    metaText=(r?('ลูกค้า: '+(r.client||'-')+' &nbsp;|&nbsp; ผู้รับผิดชอบ: '+(r.assignee||'-')+' &nbsp;|&nbsp; '):'')+'พิมพ์เมื่อ '+today;
+    reporterName=r?r.assignee:'';
+  }else if(name==='checklist'){
+    const c=load(KEYS.checklists)[0];
+    titleText=(c&&c.project)?c.project:'Checklist ตรวจรับงาน';
+    metaText='พิมพ์เมื่อ '+today;
+  }else{
+    titleText='สรุปภาพรวมโครงการ EV Total Solution';
+    metaText='พิมพ์เมื่อ '+today;
+  }
+
+  document.getElementById('print-doctag').textContent=map[name]||'';
+  document.getElementById('print-title-text').innerHTML=escHtml(titleText);
+  document.getElementById('print-meta-text').innerHTML=metaText;
+  document.getElementById('print-footer-date').textContent=today;
+  document.getElementById('print-sign-reporter').textContent='( '+(reporterName||'..............................................')+' )';
+
   document.title='EV Report — '+(map[name]||'')+' — '+new Date().toLocaleDateString('th-TH');
   window.print();
   document.title='EV Work Report & Checklist — EleXa by EGAT';
