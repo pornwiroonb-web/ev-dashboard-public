@@ -347,7 +347,7 @@ function defaultPhasesFor(project){
 
 // ข้อมูลทั้งหมดถูกเก็บไว้ใน Google Sheet ผ่าน Google Apps Script (Web App)
 // แก้ URL ด้านล่างเป็น Web app URL ที่ได้จากการ Deploy Apps Script (ลงท้ายด้วย /exec)
-const APPS_SCRIPT_URL = https://script.google.com/macros/s/AKfycbxtpf9aNev-BTCPj2WckvLukuZJHlrBnmOFnvo7O2mS_5wQpsKzfYA1pmbGX_cAJ8nq6A/exec
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxtpf9aNev-BTCPj2WckvLukuZJHlrBnmOFnvo7O2mS_5wQpsKzfYA1pmbGX_cAJ8nq6A/exec';
 async function fetchPlannerFromServer(){
   const res = await fetch(APPS_SCRIPT_URL, { method:'GET' });
   if(!res.ok) throw new Error('load failed: ' + res.status);
