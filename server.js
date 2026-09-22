@@ -340,7 +340,7 @@ async function savePlanner(body) {
 }
 
 function getAuthStatus(req) {
-  const auth = verifyAuthCookie(getCookies(req)[authCookieName]);
+  const auth = getAuth(req);
   return {
     authenticated: Boolean(auth),
     inviteCode: auth?.code || null,
@@ -349,15 +349,22 @@ function getAuthStatus(req) {
 }
 
 function isAuthenticated(req) {
-  return Boolean(verifyAuthCookie(getCookies(req)[authCookieName]));
+  return Boolean(getAuth(req));
 }
 
+// Verifies the session cookie and normalizes its role. Cookies signed before
+// the contractor/client roles existed carry no `role` field at all — those
+// were always full admin sessions, so a missing role is treated as "admin"
+// rather than rejected. This makes the role rollout backward-compatible: no
+// one has to log out and back in just because we shipped this feature.
 function getAuth(req) {
-  return verifyAuthCookie(getCookies(req)[authCookieName]);
+  const auth = verifyAuthCookie(getCookies(req)[authCookieName]);
+  if (!auth) return null;
+  return { ...auth, role: auth.role === "contractor" || auth.role === "client" ? auth.role : "admin" };
 }
 
 // Gate for admin-only endpoints (dashboard, planner, project management).
-// Contractor-role sessions are rejected here and must use /api/contractor/*.
+// Contractor/client sessions are rejected here and must use their own pages.
 function requireAdmin(req, res) {
   const auth = getAuth(req);
   if (!auth) {
@@ -367,7 +374,7 @@ function requireAdmin(req, res) {
   if (auth.role !== "admin") {
     sendJson(res, 403, {
       error: "CONTRACTOR_ROLE",
-      message: "รหัสนี้ใช้ได้เฉพาะหน้า ผรม. กรุณาเข้าใช้งานที่หน้า /contractor.html",
+      message: "รหัสนี้ใช้ได้เฉพาะหน้า ผรม./ลูกค้า กรุณาเข้าใช้งานที่หน้าของคุณ",
     });
     return null;
   }
