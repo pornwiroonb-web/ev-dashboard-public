@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>แดชบอร์ด EV | ติดตามโครงการ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+    <style>
+      .report-fab{position:fixed;bottom:28px;right:28px;z-index:999;display:flex;align-items:center;gap:8px;padding:12px 20px;background:#f7c948;color:#1a1200;font-family:'Noto Sans Thai',sans-serif;font-size:14px;font-weight:700;border:none;border-radius:50px;cursor:pointer;text-decoration:none;box-shadow:0 4px 20px rgba(247,201,72,0.4);transition:all 0.2s}
+      .report-fab:hover{background:#f0c040;transform:translateY(-2px)}
+    </style>
+  </head>
+  
+  <body>
+    <div class="bg-grid"></div>
+    <section id="auth-screen" class="auth-shell">
+      <div class="card auth-card">
+        <p class="eyebrow">Access Gate</p>
+        <h1>กรอกรหัสเชิญเพื่อเข้าใช้งาน</h1>
+        <p class="lead">
+          สำหรับทีมงานและบุคคลภายนอกที่ได้รับอนุญาตเท่านั้น
+          ถ้ามีรหัสเชิญ ให้กรอกเพื่อเข้าสู่ระบบและรายงานความคืบหน้าได้ทันที
+        </p>
+        <form id="auth-form" class="auth-form">
+          <label>
+            รหัสเชิญ
+            <input id="invite-code-input" type="password" placeholder="กรอกรหัสเชิญ" autocomplete="one-time-code" />
+          </label>
+          <div class="actions">
+            <button type="submit" class="primary">เข้าสู่ระบบ</button>
+          </div>
+          <p id="auth-message" class="form-message"></p>
+        </form>
+      </div>
+    </section>
+
+    <main id="dashboard-shell" class="shell hidden">
+      <header class="hero card">
+        <div>
+          <p class="eyebrow">ระบบติดตามโครงการ EV</p>
+          <h1>แดชบอร์ดติดตามงานติดตั้งสถานีอัดประจุไฟฟ้า</h1>
+          <p class="lead">
+            ใช้ติดตามงาน 4 ขั้นตอนหลัก: Survey, Pre-Construction, Construction และ Commissioning
+            พร้อมรายงานความคืบหน้า แนบรูป และดูสถานะล่าสุดแบบเรียลไทม์
+          </p>
+          <div class="project-switcher">
+            <label>
+              เลือกโครงการ
+              <select id="project-select"></select>
+            </label>
+            <div class="inline-actions">
+              <button type="button" id="open-new-project" class="ghost">+ เพิ่มโครงการ</button>
+              <button type="button" id="logout-button" class="ghost">ออกจากระบบ</button>
+            </div>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <article class="stat">
+            <span>โครงการ</span>
+            <strong id="project-name">-</strong>
+          </article>
+          <article class="stat">
+            <span>ความคืบหน้ารวม</span>
+            <strong id="overall-progress">0%</strong>
+          </article>
+          <article class="stat">
+            <span>อัปเดตล่าสุด</span>
+            <strong id="updated-at">-</strong>
+          </article>
+        </div>
+      </header>
+
+      <section class="grid-top">
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">สถานะงาน</p>
+              <h2>ภาพรวม 4 ขั้นตอน</h2>
+            </div>
+            <div class="pill" id="live-pill">เชื่อมต่อสด</div>
+          </div>
+          <div id="phase-cards" class="phase-grid"></div>
+        </article>
+
+        <article class="card report-card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">รายงานหน้างาน</p>
+              <h2>ส่งความคืบหน้าและรูปถ่าย</h2>
+            </div>
+          </div>
+
+          <form id="report-form" class="report-form">
+            <label>
+              ขั้นตอนงาน
+              <select id="phase-select" required></select>
+            </label>
+
+            <div class="two-col">
+              <label>
+                ผู้รายงาน
+                <input id="author-input" type="text" placeholder="ชื่อผู้ปฏิบัติงาน" value="Operator" />
+              </label>
+              <label>
+                สถานะ
+                <select id="status-select">
+                  <option value="Not Started">ยังไม่เริ่ม</option>
+                  <option value="In Progress" selected>กำลังดำเนินการ</option>
+                  <option value="Blocked">ติดขัด</option>
+                  <option value="Done">เสร็จแล้ว</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              ความคืบหน้า (%)
+              <input id="progress-input" type="range" min="0" max="100" step="1" value="0" />
+              <span class="range-value" id="progress-value">0%</span>
+            </label>
+
+            <label>
+              รายละเอียดความคืบหน้า
+              <textarea
+                id="note-input"
+                rows="4"
+                placeholder="เช่น ตรวจสอบพื้นที่แล้ว, ติดตั้งตู้ MDB เสร็จ, รออนุมัติแบบ..."
+              ></textarea>
+            </label>
+
+            <label class="file-drop">
+              <span>แนบรูปงาน</span>
+              <input id="images-input" type="file" accept="image/*" multiple />
+              <small>อัปโหลดรูปจากหน้างานได้หลายไฟล์</small>
+            </label>
+
+            <div id="image-preview" class="preview-grid"></div>
+
+            <div class="actions">
+              <button type="submit" class="primary">บันทึกรายงาน</button>
+              <button type="button" id="reset-form" class="ghost">ล้างฟอร์ม</button>
+            </div>
+            <p id="form-message" class="form-message"></p>
+          </form>
+        </article>
+      </section>
+
+      <section class="grid-bottom">
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">รายละเอียดโครงการ</p>
+              <h2>ข้อมูลหลัก</h2>
+            </div>
+          </div>
+          <dl class="meta-grid">
+            <div>
+              <dt>ลูกค้า</dt>
+              <dd id="client-name">-</dd>
+            </div>
+            <div>
+              <dt>สถานที่</dt>
+              <dd id="location-name">-</dd>
+            </div>
+            <div>
+              <dt>ผู้รับผิดชอบ</dt>
+              <dd id="owner-name">-</dd>
+            </div>
+            <div>
+              <dt>กำหนดส่ง</dt>
+              <dd id="due-date">-</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">กิจกรรมล่าสุด</p>
+              <h2>กิจกรรมสด</h2>
+            </div>
+          </div>
+          <div id="activity-feed" class="feed"></div>
+        </article>
+      </section>
+
+      <section class="grid-bottom forms-grid">
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">เพิ่มโครงการ</p>
+              <h2>สร้างโครงการใหม่</h2>
+            </div>
+          </div>
+          <form id="new-project-form" class="report-form hidden">
+            <label>
+              ชื่อโครงการ
+              <input id="new-project-name" type="text" placeholder="เช่น EV Station - The Mall" />
+            </label>
+            <div class="two-col">
+              <label>
+                ลูกค้า
+                <input id="new-project-client" type="text" placeholder="ชื่อลูกค้า" />
+              </label>
+              <label>
+                กำหนดส่ง
+                <input id="new-project-due" type="date" />
+              </label>
+            </div>
+            <div class="two-col">
+              <label>
+                สถานที่
+                <input id="new-project-location" type="text" placeholder="ระบุสถานที่" />
+              </label>
+              <label>
+                ผู้รับผิดชอบ
+                <input id="new-project-owner" type="text" placeholder="ชื่อทีม/ผู้รับผิดชอบ" />
+              </label>
+            </div>
+            <div class="actions">
+              <button type="submit" class="primary">สร้างโครงการ</button>
+              <button type="button" id="cancel-new-project" class="ghost">ยกเลิก</button>
+            </div>
+            <p id="new-project-message" class="form-message"></p>
+          </form>
+        </article>
+
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">แก้ไขโครงการ</p>
+              <h2>เปลี่ยนชื่อและข้อมูล</h2>
+            </div>
+          </div>
+          <form id="edit-project-form" class="report-form">
+            <label>
+              ชื่อโครงการ
+              <input id="edit-project-name" type="text" />
+            </label>
+            <div class="two-col">
+              <label>
+                ลูกค้า
+                <input id="edit-project-client" type="text" />
+              </label>
+              <label>
+                กำหนดส่ง
+                <input id="edit-project-due" type="date" />
+              </label>
+            </div>
+            <div class="two-col">
+              <label>
+                สถานที่
+                <input id="edit-project-location" type="text" />
+              </label>
+              <label>
+                ผู้รับผิดชอบ
+                <input id="edit-project-owner" type="text" />
+              </label>
+            </div>
+            <div class="actions">
+              <button type="submit" class="primary">บันทึกการแก้ไข</button>
+            </div>
+            <p id="edit-project-message" class="form-message"></p>
+          </form>
+        </article>
+      </section>
+    </main>
+  <a href="/report.html" class="report-fab" id="report-fab" style="display:none">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Work Report &amp; Checklist
+    </a>
+    <a href="/planner.html" class="report-fab" id="planner-fab" style="display:none;bottom:96px;background:#0d2b5c;color:#f2b705;box-shadow:0 4px 20px rgba(13,43,92,0.4)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Total Solution Planner
+    </a>
+    <a href="/contractor.html" class="report-fab" id="contractor-fab" style="display:none;bottom:164px;background:#27e0c2;color:#022019;box-shadow:0 4px 20px rgba(39,224,194,0.4)" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      หน้า ผรม. (ตัวอย่าง)
+    </a>
+    <a href="/client.html" class="report-fab" id="client-fab" style="display:none;bottom:232px;background:#4da8ff;color:#031320;box-shadow:0 4px 20px rgba(77,168,255,0.4)" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      พอร์ทัลลูกค้า (ตัวอย่าง)
+    </a>
+    <script>
+      const fab=document.getElementById('report-fab');
+      const plannerFab=document.getElementById('planner-fab');
+      const contractorFab=document.getElementById('contractor-fab');
+      const clientFab=document.getElementById('client-fab');
+      const shell=document.getElementById('dashboard-shell');
+      new MutationObserver(()=>{
+        const show = !shell.classList.contains('hidden');
+        fab.style.display = show ? 'flex' : 'none';
+        plannerFab.style.display = show ? 'flex' : 'none';
+        contractorFab.style.display = show ? 'flex' : 'none';
+        clientFab.style.display = show ? 'flex' : 'none';
+      }).observe(shell,{attributes:true,attributeFilter:['class']});
+    </script>
+  </body>
+</html>
