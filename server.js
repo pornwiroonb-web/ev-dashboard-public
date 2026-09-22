@@ -16,6 +16,12 @@ const plannerFile = path.join(dataDir, "planner.json");
 const inviteSecret = process.env.EV_INVITE_SECRET || "ev-dashboard-dev-secret";
 const authCookieName = "ev_dashboard_auth";
 const authMaxAgeSeconds = 60 * 60 * 24 * 30;
+// Invite code handed out to contractors (ผรม.) for the site-report portal only.
+// Change via the EV_CONTRACTOR_INVITE_CODE variable in Railway -> Variables.
+const contractorInviteCode = process.env.EV_CONTRACTOR_INVITE_CODE || "EV-CONTRACTOR-2026";
+// Invite code handed out to the client / project owner (ลูกค้า) — read-only
+// diary reports + plan approvals only. Change via EV_CLIENT_INVITE_CODE.
+const clientInviteCode = process.env.EV_CLIENT_INVITE_CODE || "EV-CLIENT-2026";
 
 const port = Number(process.env.PORT || 3000);
 
@@ -38,6 +44,19 @@ const defaultState = {
       code: "EV-TEAM-2026",
       label: "ทีมงานภายใน",
       active: true,
+      role: "admin",
+    },
+    {
+      code: contractorInviteCode,
+      label: "ผรม. / ทีมช่างหน้างาน",
+      active: true,
+      role: "contractor",
+    },
+    {
+      code: clientInviteCode,
+      label: "ลูกค้า / เจ้าของโครงการ",
+      active: true,
+      role: "client",
     },
   ],
   projects: [
@@ -119,6 +138,7 @@ const defaultState = {
     },
   ],
   activity: [],
+  contractorRecords: [],
   updatedAt: new Date().toISOString(),
 };
 
@@ -146,31 +166,31 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/state") {
-      if (!isAuthenticated(req)) return unauthorized(res);
+      if (!requireAdmin(req, res)) return;
       return sendJson(res, 200, state);
     }
 
     if (req.method === "GET" && url.pathname === "/api/events") {
-      if (!isAuthenticated(req)) return unauthorized(res);
+      if (!requireAdmin(req, res)) return;
       return handleSse(req, res);
     }
 
     if (req.method === "POST" && url.pathname === "/api/report") {
-      if (!isAuthenticated(req)) return unauthorized(res);
+      if (!requireAdmin(req, res)) return;
       const body = await readJson(req);
       const updated = await applyReport(body);
       return sendJson(res, 200, updated);
     }
 
     if (req.method === "POST" && url.pathname === "/api/project") {
-      if (!isAuthenticated(req)) return unauthorized(res);
+      if (!requireAdmin(req, res)) return;
       const body = await readJson(req);
       const created = await createProject(body);
       return sendJson(res, 201, created);
     }
 
     if (req.method === "PATCH" && url.pathname.startsWith("/api/project/")) {
-      if (!isAuthenticated(req)) return unauthorized(res);
+      if (!requireAdmin(req, res)) return;
       const projectId = decodeURIComponent(url.pathname.split("/").pop() || "");
       const body = await readJson(req);
       const updated = await updateProject(projectId, body);
@@ -178,15 +198,56 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/planner") {
-      if (!isAuthenticated(req)) return unauthorized(res);
+      if (!requireAdmin(req, res)) return;
       return sendJson(res, 200, await loadPlanner());
     }
 
     if (req.method === "POST" && url.pathname === "/api/planner") {
-      if (!isAuthenticated(req)) return unauthorized(res);
+      if (!requireAdmin(req, res)) return;
       const body = await readJson(req);
       const saved = await savePlanner(body);
       return sendJson(res, 200, saved);
+    }
+
+    // ---- Contractor (ผรม.) site portal ----
+    // Any authenticated role may call these, but visibility is scoped inside
+    // each handler: contractor sessions only ever see their own records.
+    if (req.method === "POST" && url.pathname === "/api/contractor/record") {
+      const auth = getAuth(req);
+      if (!auth) return unauthorized(res);
+      if (auth.role === "client") {
+        return sendJson(res, 403, { error: "Client accounts are read-only and cannot submit site records" });
+      }
+      const body = await readJson(req);
+      const created = await createContractorRecord(auth, body);
+      return sendJson(res, 201, created);
+    }
+
+    const approveMatch = url.pathname.match(/^\/api\/contractor\/record\/([^/]+)\/approve$/);
+    if (req.method === "POST" && approveMatch) {
+      const auth = getAuth(req);
+      if (!auth) return unauthorized(res);
+      if (auth.role !== "admin" && auth.role !== "client") {
+        return sendJson(res, 403, { error: "Only the client or admin can approve a site-entry plan" });
+      }
+      const body = await readJson(req);
+      const result = await reviewPlanRecord(auth, decodeURIComponent(approveMatch[1]), body);
+      return sendJson(res, result.ok ? 200 : result.status || 400, result);
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/contractor/records") {
+      const auth = getAuth(req);
+      if (!auth) return unauthorized(res);
+      const records = listContractorRecords(auth, url.searchParams.get("type"));
+      return sendJson(res, 200, { records });
+    }
+
+    if (req.method === "DELETE" && url.pathname.startsWith("/api/contractor/record/")) {
+      const auth = getAuth(req);
+      if (!auth) return unauthorized(res);
+      const id = decodeURIComponent(url.pathname.split("/").pop() || "");
+      const result = await deleteContractorRecord(auth, id);
+      return sendJson(res, result.ok ? 200 : result.status || 404, result);
     }
 
     if (req.method === "GET" && url.pathname.startsWith("/uploads/")) {
@@ -225,8 +286,35 @@ function normalizeState(input) {
   normalized.inviteCodes = Array.isArray(normalized.inviteCodes) && normalized.inviteCodes.length
     ? normalized.inviteCodes
     : structuredClone(defaultState.inviteCodes);
+
+  // Back-compat: invite codes created before roles existed are treated as admin.
+  normalized.inviteCodes = normalized.inviteCodes.map((item) => ({
+    ...item,
+    role: item.role === "contractor" || item.role === "client" ? item.role : "admin",
+  }));
+  // Make sure a contractor invite code always exists, even on data created
+  // before the contractor portal was added.
+  if (!normalized.inviteCodes.some((item) => item.role === "contractor")) {
+    normalized.inviteCodes.push({
+      code: contractorInviteCode,
+      label: "ผรม. / ทีมช่างหน้างาน",
+      active: true,
+      role: "contractor",
+    });
+  }
+  // Same for the client (ลูกค้า) read-only + approval invite code.
+  if (!normalized.inviteCodes.some((item) => item.role === "client")) {
+    normalized.inviteCodes.push({
+      code: clientInviteCode,
+      label: "ลูกค้า / เจ้าของโครงการ",
+      active: true,
+      role: "client",
+    });
+  }
+
   normalized.projects = Array.isArray(normalized.projects) ? normalized.projects : structuredClone(defaultState.projects);
   normalized.activity = Array.isArray(normalized.activity) ? normalized.activity : [];
+  normalized.contractorRecords = Array.isArray(normalized.contractorRecords) ? normalized.contractorRecords : [];
   normalized.updatedAt = normalized.updatedAt || new Date().toISOString();
   return normalized;
 }
@@ -256,11 +344,34 @@ function getAuthStatus(req) {
   return {
     authenticated: Boolean(auth),
     inviteCode: auth?.code || null,
+    role: auth?.role || null,
   };
 }
 
 function isAuthenticated(req) {
   return Boolean(verifyAuthCookie(getCookies(req)[authCookieName]));
+}
+
+function getAuth(req) {
+  return verifyAuthCookie(getCookies(req)[authCookieName]);
+}
+
+// Gate for admin-only endpoints (dashboard, planner, project management).
+// Contractor-role sessions are rejected here and must use /api/contractor/*.
+function requireAdmin(req, res) {
+  const auth = getAuth(req);
+  if (!auth) {
+    unauthorized(res);
+    return null;
+  }
+  if (auth.role !== "admin") {
+    sendJson(res, 403, {
+      error: "CONTRACTOR_ROLE",
+      message: "รหัสนี้ใช้ได้เฉพาะหน้า ผรม. กรุณาเข้าใช้งานที่หน้า /contractor.html",
+    });
+    return null;
+  }
+  return auth;
 }
 
 function verifyAuthCookie(cookieValue) {
@@ -309,10 +420,12 @@ function getCookies(req) {
   );
 }
 
-function buildAuthCookie(code) {
+function buildAuthCookie(code, role) {
+  const safeRole = role === "contractor" || role === "client" ? role : "admin";
   const payload = Buffer.from(
     JSON.stringify({
       code,
+      role: safeRole,
       exp: Date.now() + authMaxAgeSeconds * 1000,
     }),
     "utf8",
@@ -340,11 +453,12 @@ function handleInviteLogin(req, res, body) {
     return sendJson(res, 403, { error: "Invalid invite code" });
   }
 
+  const role = invite.role === "contractor" || invite.role === "client" ? invite.role : "admin";
   res.writeHead(200, {
     "Content-Type": "application/json; charset=utf-8",
-    "Set-Cookie": buildAuthCookie(code),
+    "Set-Cookie": buildAuthCookie(code, role),
   });
-  res.end(JSON.stringify({ ok: true, inviteCode: code }));
+  res.end(JSON.stringify({ ok: true, inviteCode: code, role }));
 }
 
 function handleLogout(res) {
@@ -411,6 +525,108 @@ async function applyReport(body) {
   await saveState();
   broadcast({ type: "state-updated", updatedAt: state.updatedAt });
   return { ok: true, state };
+}
+
+// ---- Contractor (ผรม.) records: pre-start plan, safety checklist, diary ----
+const CONTRACTOR_RECORD_TYPES = new Set(["plan", "checklist", "diary"]);
+
+async function createContractorRecord(auth, body) {
+  const type = String(body?.type || "").trim();
+  if (!CONTRACTOR_RECORD_TYPES.has(type)) {
+    throw new Error("Invalid record type");
+  }
+
+  const payload = body?.payload && typeof body.payload === "object" ? { ...body.payload } : {};
+
+  // Plan (pre-start) records go through a client/admin approval step for site
+  // entry. The approval state is always server-assigned so a contractor can
+  // never submit a pre-approved or self-approved plan.
+  if (type === "plan") {
+    payload.approval = { status: "pending", reviewer: null, reviewerRole: null, reviewerName: null, reviewedAt: null, note: "" };
+  }
+
+  if (Array.isArray(payload.photos)) {
+    const savedPhotos = [];
+    for (const photo of payload.photos) {
+      if (typeof photo === "string" && photo.startsWith("data:image/")) {
+        const saved = await saveDataUrl(photo, "site-photo");
+        savedPhotos.push(saved.url);
+      } else if (typeof photo === "string") {
+        savedPhotos.push(photo);
+      }
+    }
+    payload.photos = savedPhotos;
+  }
+
+  if (typeof payload.signature === "string" && payload.signature.startsWith("data:image/")) {
+    const saved = await saveDataUrl(payload.signature, "signature");
+    payload.signature = saved.url;
+  }
+
+  const record = {
+    id: randomUUID(),
+    type,
+    ownerCode: auth.code,
+    createdAt: new Date().toISOString(),
+    payload,
+  };
+
+  state.contractorRecords = state.contractorRecords || [];
+  state.contractorRecords.unshift(record);
+  state.contractorRecords = state.contractorRecords.slice(0, 3000);
+  await saveState();
+  broadcast({ type: "contractor-record-added", recordType: type });
+  return { ok: true, record };
+}
+
+function listContractorRecords(auth, type) {
+  let records = state.contractorRecords || [];
+  if (auth.role === "contractor") {
+    records = records.filter((r) => r.ownerCode === auth.code);
+  } else if (auth.role === "client") {
+    // Client only reviews daily diary reports and pre-start plans (for
+    // approval) — never the internal safety checklist, and across every
+    // contractor on the project, not just their own submissions.
+    records = records.filter((r) => r.type === "diary" || r.type === "plan");
+  }
+  // admin: no filtering, sees every record from every contractor.
+  if (type && type !== "all") {
+    records = records.filter((r) => r.type === type);
+  }
+  return records;
+}
+
+async function reviewPlanRecord(auth, id, body) {
+  const records = state.contractorRecords || [];
+  const record = records.find((r) => r.id === id);
+  if (!record) return { ok: false, status: 404, error: "Not found" };
+  if (record.type !== "plan") return { ok: false, status: 400, error: "Only plan records can be approved" };
+
+  const status = body?.status === "rejected" ? "rejected" : "approved";
+  record.payload.approval = {
+    status,
+    reviewer: auth.code,
+    reviewerRole: auth.role,
+    reviewerName: String(body?.reviewerName || "").trim() || null,
+    reviewedAt: new Date().toISOString(),
+    note: String(body?.note || "").trim(),
+  };
+  await saveState();
+  broadcast({ type: "plan-reviewed", id, status });
+  return { ok: true, record };
+}
+
+async function deleteContractorRecord(auth, id) {
+  const records = state.contractorRecords || [];
+  const idx = records.findIndex((r) => r.id === id);
+  if (idx === -1) return { ok: false, status: 404, error: "Not found" };
+  const record = records[idx];
+  if (auth.role !== "admin" && record.ownerCode !== auth.code) {
+    return { ok: false, status: 403, error: "Forbidden" };
+  }
+  records.splice(idx, 1);
+  await saveState();
+  return { ok: true };
 }
 
 function createDefaultPhases() {
