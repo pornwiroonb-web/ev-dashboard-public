@@ -118,9 +118,10 @@ function showDashboard() {
 
 async function loadState() {
   const response = await fetch("/api/state");
-  if (response.status === 401) {
+  if (response.status === 401 || response.status === 403) {
     await logout(false);
     showAuth();
+    elements.authMessage.textContent = "เซสชันหมดอายุหรือไม่มีสิทธิ์เข้าถึง กรุณาเข้าสู่ระบบอีกครั้ง";
     return;
   }
   const data = await response.json();
