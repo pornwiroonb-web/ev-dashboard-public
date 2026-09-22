@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>พอร์ทัลลูกค้า | EleXa by EGAT</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#041018; --panel: rgba(8, 20, 34, 0.88); --panel-strong:#0a1b2e;
+    --line: rgba(107, 219, 255, 0.18); --text:#eff7ff; --muted:#9cb2c8;
+    --accent:#4da8ff; --accent-2:#27e0c2; --accent-3:#9bff6b;
+    --good:#6ef09c; --warn:#ffd36c; --bad:#ff7f9d;
+    --radius:22px; --radius-sm:14px;
+    --font-ui:'Noto Sans Thai', sans-serif; --font-display:'Space Grotesk','Noto Sans Thai', sans-serif;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    background:
+      radial-gradient(circle at top left, rgba(77,168,255,.16), transparent 30%),
+      radial-gradient(circle at top right, rgba(39,224,194,.14), transparent 28%),
+      linear-gradient(180deg,#03101a,#07141f 45%,#071a25);
+    color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100%;
+  }
+  h1,h2,h3{font-family:var(--font-display);}
+  button,input,select,textarea{font-family:inherit;}
+
+  .shell{max-width:560px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;position:relative;}
+  .stripe{height:5px;flex:none;background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent-3));}
+
+  #gate{flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 24px calc(32px + env(safe-area-inset-bottom,0px));}
+  .brand-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .bolt{width:38px;height:38px;border-radius:12px;background:rgba(77,168,255,.14);border:1px solid var(--line);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;}
+  .brand-text .k1{font-size:12px;color:var(--muted);}
+  .brand-text .k2{font-weight:700;font-size:17px;font-family:var(--font-display);}
+  #gate h1{font-size:25px;line-height:1.3;margin:22px 0 6px;font-weight:700;}
+  #gate p.sub{color:var(--muted);margin:0 0 26px;font-size:14.5px;line-height:1.65;}
+  .field{margin-bottom:15px;}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600;}
+  .field input,.field textarea{width:100%;background:var(--panel-strong);border:1.5px solid var(--line);color:var(--text);border-radius:12px;padding:13px 14px;font-size:15.5px;outline:none;transition:border-color .15s;}
+  .field input:focus,.field textarea:focus{border-color:var(--accent);}
+  .field textarea{resize:vertical;min-height:70px;line-height:1.5;}
+  .btn{appearance:none;border:none;border-radius:12px;padding:14px 18px;font-size:15.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .08s,filter .15s;font-family:var(--font-display);}
+  .btn:active{transform:scale(.98);}
+  .btn:disabled{opacity:.55;pointer-events:none;}
+  .btn-primary{background:var(--accent);color:#031320;width:100%;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--line);}
+  .btn-approve{background:rgba(155,255,107,.16);color:var(--accent-3);border:1.5px solid rgba(155,255,107,.4);}
+  .btn-reject{background:rgba(255,127,157,.14);color:var(--bad);border:1.5px solid rgba(255,127,157,.4);}
+  .btn-sm{padding:9px 12px;font-size:13.5px;border-radius:10px;}
+  .gate-error{display:none;background:rgba(255,127,157,.12);border:1px solid rgba(255,127,157,.4);color:#ffc2d1;padding:11px 13px;border-radius:10px;font-size:13.5px;margin-bottom:16px;}
+  .gate-note{margin-top:24px;font-size:12.5px;color:var(--muted);line-height:1.65;border-top:1px solid var(--line);padding-top:16px;}
+
+  #app{display:none;flex:1;flex-direction:column;min-height:0;}
+  header.appbar{flex:none;padding:14px 18px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;backdrop-filter:blur(10px);}
+  .id-block{display:flex;align-items:center;gap:10px;min-width:0;}
+  .avatar{width:36px;height:36px;border-radius:50%;background:var(--panel-strong);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);flex:none;font-family:var(--font-display);font-size:15px;}
+  .id-text{min-width:0;}
+  .id-text .name{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .id-text .co{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .logout{background:none;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;padding:6px;flex:none;}
+  .logout:hover{color:var(--text);}
+  .banner{flex:none;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line);padding:9px 18px;line-height:1.5;display:flex;gap:8px;align-items:flex-start;}
+  .banner b{color:var(--accent-3);font-weight:600;}
+
+  main{flex:1;overflow-y:auto;padding:18px 18px 100px;min-height:0;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;animation:fadeUp .25s ease;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:16px;}
+  .chip{padding:9px 13px;border-radius:99px;border:1.5px solid var(--line);background:var(--panel-strong);font-size:13.5px;cursor:pointer;color:var(--muted);user-select:none;white-space:nowrap;}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#031320;}
+
+  .rec-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:12px;box-shadow:0 24px 60px rgba(0,0,0,.3);}
+  .rec-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+  .rec-type{font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--accent);font-family:var(--font-display);}
+  .rec-title{font-size:15px;font-weight:600;margin:2px 0 3px;}
+  .rec-meta{font-size:12.5px;color:var(--muted);}
+  .badge{padding:4px 10px;border-radius:99px;font-size:11.5px;font-weight:700;flex:none;white-space:nowrap;}
+  .badge.doing{background:rgba(77,168,255,.18);color:#bfe2ff;}
+  .badge.done{background:rgba(155,255,107,.18);color:#ddffca;}
+  .badge.issue{background:rgba(255,127,157,.18);color:#ffd0dc;}
+  .badge.notstarted{background:rgba(156,178,200,.18);color:var(--text);}
+  .rec-actions{display:flex;gap:8px;margin-top:12px;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+  .empty-state .ei{font-size:34px;margin-bottom:10px;}
+
+  nav.tabbar{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--panel);border-top:1px solid var(--line);display:flex;padding:8px 6px calc(10px + env(safe-area-inset-bottom,0px));backdrop-filter:blur(10px);z-index:20;}
+  nav.tabbar .tbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--muted);padding:6px 2px;border-radius:10px;cursor:pointer;position:relative;}
+  nav.tabbar .tbtn .ic{font-size:19px;}
+  nav.tabbar .tbtn .lb{font-size:10.5px;font-weight:600;}
+  nav.tabbar .tbtn.active{color:var(--accent);}
+  .pill-count{position:absolute;top:0;right:22%;background:var(--bad);color:#fff;font-size:10px;font-weight:700;border-radius:99px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;align-items:flex-end;justify-content:center;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--panel-strong);width:100%;max-width:560px;max-height:88vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom,0px));animation:slideUp .2s ease;}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .modal-head h3{margin:0;font-size:17px;}
+  .modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;}
+  .detail-row{padding:10px 0;border-bottom:1px solid var(--line);}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-row .dk{font-size:11.5px;color:var(--muted);margin-bottom:3px;font-weight:600;}
+  .detail-row .dv{font-size:14.5px;line-height:1.55;white-space:pre-wrap;}
+  .detail-imgs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .detail-imgs img{width:72px;height:72px;object-fit:cover;border-radius:9px;border:1px solid var(--line);cursor:zoom-in;}
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--accent-3);color:#052b12;padding:11px 18px;border-radius:99px;font-size:14px;font-weight:700;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 8px 24px rgba(0,0,0,.35);white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+  .toast.err{background:var(--bad);color:#3a0410;}
+  .spin{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid rgba(3,19,32,.35);border-top-color:#031320;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .approve-box{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
+  .approve-box label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:600;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="stripe"></div>
+
+  <div id="gate">
+    <div class="brand-row"><div class="bolt">👤</div><div class="brand-text"><div class="k1">EleXa by EGAT</div><div class="k2">พอร์ทัลลูกค้า</div></div></div>
+    <h1>เข้าสู่ระบบลูกค้า</h1>
+    <p class="sub">กรอกรหัสเชิญที่ได้รับ เพื่อดูรายงานประจำวันของหน้างาน และอนุมัติแผนก่อนวันเริ่มงานของผู้รับเหมา</p>
+    <div class="gate-error" id="gateError"></div>
+    <div class="field"><label>รหัสเชิญ (Invite Code)</label><input type="text" id="gCode" placeholder="กรอกรหัสที่ได้รับ" autocomplete="off"></div>
+    <div class="field"><label>ชื่อผู้ตรวจสอบ (แสดงในประวัติการอนุมัติ)</label><input type="text" id="gName" placeholder="เช่น คุณสมหญิง ใจดี"></div>
+    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
+    <div class="gate-note">บัญชีลูกค้าดูได้เฉพาะรายงานประจำวันและแผนที่รออนุมัติเท่านั้น ไม่สามารถแก้ไขหรือลบข้อมูลของผู้รับเหมาได้</div>
+  </div>
+
+  <div id="app">
+    <header class="appbar">
+      <div class="id-block"><div class="avatar" id="avaInit">-</div><div class="id-text"><div class="name" id="idName">-</div><div class="co">ลูกค้า / เจ้าของโครงการ</div></div></div>
+      <button class="logout" onclick="doLogout()">ออกจากระบบ</button>
+    </header>
+    <div class="banner"><span>👁️</span><span>มุมมองลูกค้า — <b>อ่านอย่างเดียว</b> ยกเว้นการอนุมัติ/ไม่อนุมัติแผนเข้างาน</span></div>
+
+    <main id="mainScroll">
+      <section class="tab-panel active" id="tab-diary">
+        <div class="filter-row" id="diaryFilters">
+          <div class="chip active" data-f="all">ทั้งหมด</div>
+          <div class="chip" data-f="doing">🔵 กำลังดำเนินการ</div>
+          <div class="chip" data-f="done">🟢 เสร็จตามแผน</div>
+          <div class="chip" data-f="issue">🔴 ติดปัญหา</div>
+        </div>
+        <div id="diaryList"></div>
+      </section>
+
+      <section class="tab-panel" id="tab-approve">
+        <div class="filter-row" id="approveFilters">
+          <div class="chip active" data-f="pending">⏳ รออนุมัติ</div>
+          <div class="chip" data-f="approved">✅ อนุมัติแล้ว</div>
+          <div class="chip" data-f="rejected">❌ ไม่อนุมัติ</div>
+          <div class="chip" data-f="all">ทั้งหมด</div>
+        </div>
+        <div id="approveList"></div>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <button class="tbtn active" data-tab="diary" onclick="switchTab('diary')"><span class="ic">📓</span><span class="lb">รายงานประจำวัน</span></button>
+      <button class="tbtn" data-tab="approve" onclick="switchTab('approve')"><span class="ic">✅</span><span class="lb">อนุมัติเข้างาน</span><span class="pill-count" id="pendingCount" style="display:none;">0</span></button>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-bg" id="modalBg" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <div class="modal-head"><h3 id="modalTitle">รายละเอียด</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const K_NAME = "elexa_client_name_v1";
+function val(id){ const el=document.getElementById(id); return el? el.value.trim() : ""; }
+function setVal(id,v){ const el=document.getElementById(id); if(el) el.value = v || ""; }
+let currentName = "";
+
+let toastTimer;
+function showToast(msg, isErr){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.toggle('err', !!isErr); t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+async function api(path, opts){
+  const res = await fetch(path, Object.assign({ headers: {"Content-Type":"application/json"} }, opts));
+  let data = null; try{ data = await res.json(); }catch(e){}
+  if(!res.ok){ const err = new Error((data && (data.message || data.error)) || ("HTTP " + res.status)); err.status = res.status; throw err; }
+  return data;
+}
+
+async function checkAuthOnLoad(){
+  try{
+    const data = await api('/api/auth/status');
+    if(data.authenticated && data.role === 'contractor'){ window.location.replace('/contractor.html'); return; }
+    if(data.authenticated){ await enterApp(); return; }
+  }catch(e){}
+  setVal('gName', localStorage.getItem(K_NAME) || '');
+  document.getElementById('gate').style.display = 'flex';
+}
+
+async function doLogin(){
+  const code = val('gCode');
+  const err = document.getElementById('gateError');
+  err.style.display = 'none';
+  if(!code){ err.textContent = "กรุณากรอกรหัสเชิญ"; err.style.display='block'; return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังตรวจสอบ...';
+  try{
+    await api('/api/auth/invite', { method:'POST', body: JSON.stringify({ code }) });
+    currentName = val('gName');
+    if(currentName) localStorage.setItem(K_NAME, currentName);
+    await enterApp();
+  }catch(e){
+    err.textContent = e.status === 403 ? "รหัสเชิญไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง" : "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่";
+    err.style.display = 'block';
+  }finally{
+    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+  }
+}
+
+async function doLogout(){
+  try{ await api('/api/auth/logout', { method:'POST' }); }catch(e){}
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('gate').style.display = 'flex';
+}
+
+async function enterApp(){
+  currentName = localStorage.getItem(K_NAME) || currentName || 'ลูกค้า';
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('idName').textContent = currentName;
+  document.getElementById('avaInit').textContent = currentName.trim().charAt(0) || '?';
+  renderDiary();
+  renderApprovals();
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.getElementById('mainScroll').scrollTop = 0;
+  if(name==='diary') renderDiary();
+  if(name==='approve') renderApprovals();
+}
+
+document.addEventListener('click', function(e){
+  const dchip = e.target.closest('#diaryFilters .chip');
+  if(dchip){ document.querySelectorAll('#diaryFilters .chip').forEach(c=>c.classList.remove('active')); dchip.classList.add('active'); renderDiary(); }
+  const achip = e.target.closest('#approveFilters .chip');
+  if(achip){ document.querySelectorAll('#approveFilters .chip').forEach(c=>c.classList.remove('active')); achip.classList.add('active'); renderApprovals(); }
+});
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const STATUS_LABEL = { notstarted:"⚪ ยังไม่เริ่ม", doing:"🔵 กำลังดำเนินการ", done:"🟢 เสร็จตามแผน", issue:"🔴 ติดปัญหา/ล่าช้า" };
+const APPROVAL_LABEL = { pending:"⏳ รออนุมัติ", approved:"✅ อนุมัติเข้างานแล้ว", rejected:"❌ ไม่อนุมัติ" };
+const APPROVAL_BADGE_CLASS = { pending:"doing", approved:"done", rejected:"issue" };
+
+/* ================= DIARY (read-only) ================= */
+let diaryCache = [];
+async function renderDiary(){
+  const list = document.getElementById('diaryList');
+  list.innerHTML = `<div class="empty-state">กำลังโหลด...</div>`;
+  try{
+    const data = await api('/api/contractor/records?type=diary');
+    diaryCache = data.records || [];
+  }catch(e){ list.innerHTML = `<div class="empty-state"><div class="ei">⚠️</div>โหลดไม่สำเร็จ<br>${e.message}</div>`; return; }
+
+  const filterEl = document.querySelector('#diaryFilters .chip.active');
+  const filter = filterEl ? filterEl.dataset.f : 'all';
+  const rows = filter === 'all' ? diaryCache : diaryCache.filter(r => (r.payload||{}).status === filter);
+
+  if(rows.length === 0){ list.innerHTML = `<div class="empty-state"><div class="ei">🗂️</div>ยังไม่มีรายงานในหมวดนี้</div>`; return; }
+
+  list.innerHTML = rows.map(r=>{
+    const p = r.payload || {};
+    const dt = new Date(r.createdAt);
+    const dtStr = dt.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + dt.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    return `
+      <div class="rec-card">
+        <div class="rec-top">
+          <div>
+            <div class="rec-type">Diary Report</div>
+            <div class="rec-title">${escapeHtml((p.work||'').slice(0,60) || 'ไม่ระบุ')}</div>
+            <div class="rec-meta">${dtStr} · ${escapeHtml(p.reporter||'ไม่ระบุผู้รายงาน')}${p.company? ' ('+escapeHtml(p.company)+')' : ''} · ${escapeHtml(p.project||'ไม่ระบุโครงการ')}</div>
+          </div>
+          <span class="badge ${p.status||'notstarted'}">${STATUS_LABEL[p.status]||''}</span>
+        </div>
+        <div class="rec-actions"><button class="btn btn-ghost btn-sm" onclick="viewDiary('${r.id}')">ดูรายละเอียด</button></div>
+      </div>`;
+  }).join('');
+}
+function viewDiary(id){
+  const r = diaryCache.find(x=>x.id===id);
+  if(!r) return;
+  const p = r.payload || {};
+  document.getElementById('modalTitle').textContent = 'Diary Report';
+  let html = [
+    ['วันที่', p.date],['โครงการ/สถานี', p.project],['สถานที่', p.location],
+    ['ผู้รายงาน', p.reporter+(p.company? ' · '+p.company : '')],
+    ['เวลา', (p.start||'-')+' - '+(p.end||'-')],['งานที่ดำเนินการ', p.work],
+    ['ปัญหา/อุปสรรค', p.issue],['แผนงานวันถัดไป', p.next],['สถานะ', STATUS_LABEL[p.status]]
+  ].filter(([k,v])=>v).map(([k,v])=>`<div class="detail-row"><div class="dk">${k}</div><div class="dv">${escapeHtml(String(v))}</div></div>`).join('');
+  if(p.photos && p.photos.length){
+    html += `<div class="detail-row"><div class="dk">รูปภาพหน้างาน</div><div class="detail-imgs">${p.photos.map(src=>`<img src="${src}" onclick="window.open('${src}','_blank')">`).join('')}</div></div>`;
+  }
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalBg').classList.add('open');
+}
+
+/* ================= PLAN APPROVALS ================= */
+let planCache = [];
+async function renderApprovals(){
+  const list = document.getElementById('approveList');
+  list.innerHTML = `<div class="empty-state">กำลังโหลด...</div>`;
+  try{
+    const data = await api('/api/contractor/records?type=plan');
+    planCache = data.records || [];
+  }catch(e){ list.innerHTML = `<div class="empty-state"><div class="ei">⚠️</div>โหลดไม่สำเร็จ<br>${e.message}</div>`; return; }
+
+  const pendingCount = planCache.filter(r => ((r.payload||{}).approval||{}).status === 'pending').length;
+  const badge = document.getElementById('pendingCount');
+  if(pendingCount > 0){ badge.style.display = 'flex'; badge.textContent = pendingCount; } else { badge.style.display = 'none'; }
+
+  const filterEl = document.querySelector('#approveFilters .chip.active');
+  const filter = filterEl ? filterEl.dataset.f : 'pending';
+  const rows = filter === 'all' ? planCache : planCache.filter(r => (((r.payload||{}).approval||{}).status || 'pending') === filter);
+
+  if(rows.length === 0){ list.innerHTML = `<div class="empty-state"><div class="ei">🗂️</div>ไม่มีแผนงานในหมวดนี้</div>`; return; }
+
+  list.innerHTML = rows.map(r=>{
+    const p = r.payload || {};
+    const st = (p.approval && p.approval.status) || 'pending';
+    const dt = new Date(r.createdAt);
+    const dtStr = dt.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + dt.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    return `
+      <div class="rec-card">
+        <div class="rec-top">
+          <div>
+            <div class="rec-type">แผนก่อนวันเริ่มงาน</div>
+            <div class="rec-title">${escapeHtml((p.scope||'').slice(0,60) || 'ไม่ระบุขอบเขตงาน')}</div>
+            <div class="rec-meta">${dtStr} · ${escapeHtml(p.reporter||'ไม่ระบุผู้จัดทำ')}${p.company? ' ('+escapeHtml(p.company)+')' : ''} · ${escapeHtml(p.project||'ไม่ระบุโครงการ')}</div>
+          </div>
+          <span class="badge ${APPROVAL_BADGE_CLASS[st]}">${APPROVAL_LABEL[st]}</span>
+        </div>
+        <div class="rec-actions"><button class="btn btn-ghost btn-sm" onclick="viewPlan('${r.id}')">ดูรายละเอียด${st==='pending' ? ' / อนุมัติ' : ''}</button></div>
+      </div>`;
+  }).join('');
+}
+
+function viewPlan(id){
+  const r = planCache.find(x=>x.id===id);
+  if(!r) return;
+  const p = r.payload || {};
+  const st = (p.approval && p.approval.status) || 'pending';
+  document.getElementById('modalTitle').textContent = 'แผนก่อนวันเริ่มงาน';
+  let html = [
+    ['วันที่', p.date],['โครงการ/สถานี', p.project],['สถานที่', p.location],
+    ['ผู้จัดทำ', p.reporter+(p.company? ' · '+p.company : '')],
+    ['จำนวนผู้ปฏิบัติงาน', p.crew],['เวลา (แผน)', (p.start||'-')+' - '+(p.end||'-')],
+    ['หัวหน้าทีม/ผู้ควบคุมงาน', p.supervisor],['ขอบเขตงาน', p.scope],
+    ['เครื่องมือ/อุปกรณ์', p.tools],['ความเสี่ยงที่คาดว่าจะพบ', p.risk],['มาตรการป้องกัน', p.mitigation]
+  ].filter(([k,v])=>v).map(([k,v])=>`<div class="detail-row"><div class="dk">${k}</div><div class="dv">${escapeHtml(String(v))}</div></div>`).join('');
+  if(p.signature){
+    html += `<div class="detail-row"><div class="dk">ลายเซ็นผู้จัดทำแผน</div><img src="${p.signature}" style="max-width:220px;background:#fff;border-radius:8px;border:1px solid var(--line);margin-top:4px;"></div>`;
+  }
+
+  if(st === 'pending'){
+    html += `
+      <div class="approve-box">
+        <label>หมายเหตุ (ถ้ามี)</label>
+        <textarea id="approveNote" placeholder="เช่น เงื่อนไขการเข้าพื้นที่ / ข้อควรระวัง"></textarea>
+        <div class="rec-actions" style="margin-top:12px;">
+          <button class="btn btn-approve" id="btnApprove" onclick="reviewPlan('${r.id}','approved')">✅ อนุมัติเข้างาน</button>
+          <button class="btn btn-reject" id="btnReject" onclick="reviewPlan('${r.id}','rejected')">❌ ไม่อนุมัติ</button>
+        </div>
+      </div>`;
+  } else {
+    const dt = p.approval.reviewedAt ? new Date(p.approval.reviewedAt).toLocaleString('th-TH') : '';
+    html += `<div class="detail-row"><div class="dk">ผลการพิจารณา</div><div class="dv">${APPROVAL_LABEL[st]}${p.approval.reviewerName? ' — โดย '+escapeHtml(p.approval.reviewerName) : ''}${dt? ' ('+dt+')' : ''}${p.approval.note? '\\nหมายเหตุ: '+p.approval.note : ''}</div></div>`;
+  }
+
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalBg').classList.add('open');
+}
+
+async function reviewPlan(id, status){
+  const note = val('approveNote');
+  const btnId = status === 'approved' ? 'btnApprove' : 'btnReject';
+  const btn = document.getElementById(btnId);
+  if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังบันทึก...'; }
+  try{
+    await api('/api/contractor/record/' + encodeURIComponent(id) + '/approve', {
+      method:'POST',
+      body: JSON.stringify({ status, note, reviewerName: currentName })
+    });
+    closeModal();
+    showToast(status === 'approved' ? 'อนุมัติเข้างานแล้ว' : 'บันทึกการไม่อนุมัติแล้ว');
+    renderApprovals();
+  }catch(e){ showToast('บันทึกไม่สำเร็จ: ' + e.message, true); }
+}
+
+function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
+
+checkAuthOnLoad();
+</script>
+</body>
+</html>

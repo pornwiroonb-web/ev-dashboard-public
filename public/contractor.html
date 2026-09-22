@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบ ผรม. หน้างาน | EleXa by EGAT</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#041018;
+    --panel: rgba(8, 20, 34, 0.88);
+    --panel-strong:#0a1b2e;
+    --line: rgba(107, 219, 255, 0.18);
+    --text:#eff7ff;
+    --muted:#9cb2c8;
+    --accent:#27e0c2;
+    --accent-2:#4da8ff;
+    --accent-3:#9bff6b;
+    --good:#6ef09c;
+    --warn:#ffd36c;
+    --bad:#ff7f9d;
+    --radius:22px;
+    --radius-sm:14px;
+    --font-ui:'Noto Sans Thai', sans-serif;
+    --font-display:'Space Grotesk','Noto Sans Thai', sans-serif;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    background:
+      radial-gradient(circle at top left, rgba(39,224,194,.18), transparent 30%),
+      radial-gradient(circle at top right, rgba(77,168,255,.14), transparent 28%),
+      linear-gradient(180deg,#03101a,#07141f 45%,#071a25);
+    color:var(--text);
+    font-family:var(--font-ui);
+    -webkit-font-smoothing:antialiased;
+    min-height:100%;
+  }
+  h1,h2,h3{font-family:var(--font-display);}
+  button,input,select,textarea{font-family:inherit;}
+
+  .shell{max-width:560px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;position:relative;}
+  .stripe{height:5px;flex:none;background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent-3));}
+
+  /* ============ GATE ============ */
+  #gate{flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 24px calc(32px + env(safe-area-inset-bottom,0px));}
+  .brand-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .bolt{width:38px;height:38px;border-radius:12px;background:rgba(39,224,194,.14);border:1px solid var(--line);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;}
+  .brand-text .k1{font-size:12px;color:var(--muted);}
+  .brand-text .k2{font-weight:700;font-size:17px;font-family:var(--font-display);}
+  #gate h1{font-size:25px;line-height:1.3;margin:22px 0 6px;font-weight:700;}
+  #gate p.sub{color:var(--muted);margin:0 0 26px;font-size:14.5px;line-height:1.65;}
+  .field{margin-bottom:15px;}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600;}
+  .field input,.field select,.field textarea{
+    width:100%;background:var(--panel-strong);border:1.5px solid var(--line);color:var(--text);
+    border-radius:12px;padding:13px 14px;font-size:15.5px;outline:none;transition:border-color .15s;
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+  .field textarea{resize:vertical;min-height:80px;line-height:1.5;}
+  .btn{appearance:none;border:none;border-radius:12px;padding:14px 18px;font-size:15.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .08s,filter .15s;font-family:var(--font-display);}
+  .btn:active{transform:scale(.98);}
+  .btn:disabled{opacity:.55;pointer-events:none;}
+  .btn-primary{background:var(--accent);color:#022019;width:100%;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--line);}
+  .btn-danger{background:rgba(255,127,157,.12);color:var(--bad);border:1.5px solid rgba(255,127,157,.35);}
+  .btn-sm{padding:9px 12px;font-size:13.5px;border-radius:10px;}
+  .gate-error{display:none;background:rgba(255,127,157,.12);border:1px solid rgba(255,127,157,.4);color:#ffc2d1;padding:11px 13px;border-radius:10px;font-size:13.5px;margin-bottom:16px;}
+  .gate-note{margin-top:24px;font-size:12.5px;color:var(--muted);line-height:1.65;border-top:1px solid var(--line);padding-top:16px;}
+
+  /* ============ APP ============ */
+  #app{display:none;flex:1;flex-direction:column;min-height:0;}
+  header.appbar{flex:none;padding:14px 18px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;backdrop-filter:blur(10px);}
+  .id-block{display:flex;align-items:center;gap:10px;min-width:0;}
+  .avatar{width:36px;height:36px;border-radius:50%;background:var(--panel-strong);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);flex:none;font-family:var(--font-display);font-size:15px;}
+  .id-text{min-width:0;}
+  .id-text .name{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .id-text .co{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .logout{background:none;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;padding:6px;flex:none;}
+  .logout:hover{color:var(--text);}
+
+  .banner{flex:none;font-size:12.5px;color:var(--muted);background:transparent;border-bottom:1px solid var(--line);padding:9px 18px;line-height:1.5;display:flex;gap:8px;align-items:flex-start;}
+  .banner b{color:var(--accent-3);font-weight:600;}
+
+  .context-bar{flex:none;background:var(--panel);border-bottom:1px solid var(--line);padding:12px 18px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .context-bar .field{margin:0;}
+  .context-bar label{font-size:11.5px;}
+  .context-bar input{padding:10px 11px;font-size:14px;}
+
+  main{flex:1;overflow-y:auto;padding:18px 18px 100px;min-height:0;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;animation:fadeUp .25s ease;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:0 24px 60px rgba(0,0,0,.35);}
+  .card h2{font-size:17px;margin:0 0 3px;font-weight:700;}
+  .card .card-sub{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.5;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+  .cat{margin-bottom:20px;}
+  .cat:last-child{margin-bottom:0;}
+  .cat-title{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-weight:600;font-size:14.5px;margin-bottom:10px;}
+  .cat-icon{width:26px;height:26px;border-radius:8px;background:var(--panel-strong);display:flex;align-items:center;justify-content:center;font-size:14px;flex:none;}
+  .chk-item{display:flex;align-items:flex-start;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line);}
+  .chk-item:last-child{border-bottom:none;}
+  .chk-item input[type=checkbox]{appearance:none;width:24px;height:24px;border-radius:7px;border:2px solid var(--line);background:var(--panel-strong);flex:none;margin-top:1px;cursor:pointer;position:relative;transition:.15s;}
+  .chk-item input[type=checkbox]:checked{background:var(--accent-3);border-color:var(--accent-3);}
+  .chk-item input[type=checkbox]:checked::after{content:"";position:absolute;left:7px;top:3px;width:6px;height:11px;border:solid #052b12;border-width:0 2.5px 2.5px 0;transform:rotate(45deg);}
+  .chk-item .chk-label{flex:1;font-size:14.5px;line-height:1.5;cursor:pointer;}
+  .chk-item .chk-note{width:100%;margin-top:8px;font-size:13px;padding:8px 10px;border-radius:8px;background:var(--panel-strong);border:1px solid var(--line);color:var(--text);display:none;}
+  .chk-item.needs-note .chk-note{display:block;}
+
+  .progress-wrap{margin:4px 0 20px;}
+  .progress-top{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:6px;}
+  .progress-track{height:8px;border-radius:99px;background:var(--panel-strong);overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--bad),var(--warn) 55%,var(--accent-3));width:0%;transition:width .25s;}
+
+  .sig-box{background:#fff;border-radius:12px;border:1.5px solid var(--line);width:100%;height:140px;touch-action:none;display:block;}
+  .sig-actions{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+  .sig-actions span{font-size:12px;color:var(--muted);}
+
+  .chip-select{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{padding:9px 13px;border-radius:99px;border:1.5px solid var(--line);background:var(--panel-strong);font-size:13.5px;cursor:pointer;color:var(--muted);user-select:none;}
+  .chip.active[data-c="doing"]{background:rgba(77,168,255,.18);border-color:var(--accent-2);color:#bfe2ff;}
+  .chip.active[data-c="done"]{background:rgba(155,255,107,.18);border-color:var(--accent-3);color:#ddffca;}
+  .chip.active[data-c="issue"]{background:rgba(255,127,157,.18);border-color:var(--bad);color:#ffd0dc;}
+  .chip.active[data-c="notstarted"]{background:rgba(156,178,200,.18);border-color:var(--muted);color:var(--text);}
+
+  .drop{border:1.5px dashed var(--line);border-radius:12px;padding:20px;text-align:center;color:var(--muted);font-size:13.5px;cursor:pointer;background:var(--panel-strong);}
+  .drop:hover{border-color:var(--accent);}
+  .thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .thumb{width:64px;height:64px;border-radius:9px;overflow:hidden;position:relative;border:1px solid var(--line);}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb .rm{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+
+  .actions-row{display:flex;gap:10px;margin-top:18px;}
+  .actions-row .btn-ghost{flex:none;}
+  .actions-row .btn-primary{flex:1;}
+
+  .rec-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:12px;}
+  .rec-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+  .rec-type{font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--accent);font-family:var(--font-display);}
+  .rec-title{font-size:15px;font-weight:600;margin:2px 0 3px;}
+  .rec-meta{font-size:12.5px;color:var(--muted);}
+  .badge{padding:4px 10px;border-radius:99px;font-size:11.5px;font-weight:700;flex:none;white-space:nowrap;}
+  .badge.doing{background:rgba(77,168,255,.18);color:#bfe2ff;}
+  .badge.done{background:rgba(155,255,107,.18);color:#ddffca;}
+  .badge.issue{background:rgba(255,127,157,.18);color:#ffd0dc;}
+  .badge.notstarted{background:rgba(156,178,200,.18);color:var(--text);}
+  .rec-actions{display:flex;gap:8px;margin-top:12px;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+  .empty-state .ei{font-size:34px;margin-bottom:10px;}
+  .filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:16px;}
+  .filter-row .chip{white-space:nowrap;}
+  .filter-row .chip.active{background:var(--accent);border-color:var(--accent);color:#022019;}
+
+  nav.tabbar{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--panel);border-top:1px solid var(--line);display:flex;padding:8px 6px calc(10px + env(safe-area-inset-bottom,0px));backdrop-filter:blur(10px);z-index:20;}
+  nav.tabbar .tbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--muted);padding:6px 2px;border-radius:10px;cursor:pointer;}
+  nav.tabbar .tbtn .ic{font-size:19px;}
+  nav.tabbar .tbtn .lb{font-size:10.5px;font-weight:600;}
+  nav.tabbar .tbtn.active{color:var(--accent);}
+
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;align-items:flex-end;justify-content:center;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--panel-strong);width:100%;max-width:560px;max-height:85vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom,0px));animation:slideUp .2s ease;}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .modal-head h3{margin:0;font-size:17px;}
+  .modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;}
+  .detail-row{padding:10px 0;border-bottom:1px solid var(--line);}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-row .dk{font-size:11.5px;color:var(--muted);margin-bottom:3px;font-weight:600;}
+  .detail-row .dv{font-size:14.5px;line-height:1.55;white-space:pre-wrap;}
+  .detail-imgs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .detail-imgs img{width:72px;height:72px;object-fit:cover;border-radius:9px;border:1px solid var(--line);}
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--accent-3);color:#052b12;padding:11px 18px;border-radius:99px;font-size:14px;font-weight:700;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 8px 24px rgba(0,0,0,.35);white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+  .toast.err{background:var(--bad);color:#3a0410;}
+  .spin{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid rgba(2,32,25,.35);border-top-color:#022019;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  #printArea{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{display:block;position:absolute;left:0;top:0;width:100%;padding:20px;color:#000;background:#fff;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="stripe"></div>
+
+  <!-- ============ GATE ============ -->
+  <div id="gate">
+    <div class="brand-row">
+      <div class="bolt">⚡</div>
+      <div class="brand-text"><div class="k1">EleXa by EGAT</div><div class="k2">ระบบหน้างานสำหรับ ผรม.</div></div>
+    </div>
+    <h1>เข้าสู่ระบบผู้รับเหมา</h1>
+    <p class="sub">กรอกรหัสเชิญที่ได้รับจากทีม EGAT เพื่อบันทึกแผนก่อนวันเริ่มงาน, Checklist ความปลอดภัย และ Diary รายวัน — หน้านี้แยกจากแดชบอร์ดผู้บริหาร ผรม. จะเห็นเฉพาะข้อมูลที่ตนเองบันทึก</p>
+
+    <div class="gate-error" id="gateError"></div>
+
+    <div class="field">
+      <label>รหัสเชิญ (Invite Code)</label>
+      <input type="text" id="gCode" placeholder="กรอกรหัสที่ได้รับ" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>ชื่อ-นามสกุลผู้ปฏิบัติงาน</label>
+      <input type="text" id="gName" placeholder="เช่น สมชาย ใจดี">
+    </div>
+    <div class="field">
+      <label>บริษัทผู้รับเหมา</label>
+      <input type="text" id="gCompany" placeholder="ชื่อบริษัท ผรม.">
+    </div>
+
+    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
+
+    <div class="gate-note">
+      บัญชี ผรม. ไม่สามารถเข้าถึงแดชบอร์ดโครงการ, Planner หรือหน้าอื่นของทีม EGAT ได้ — ระบบจะจำกัดสิทธิ์ไว้ที่หน้านี้เท่านั้นโดยอัตโนมัติ
+    </div>
+  </div>
+
+  <!-- ============ APP ============ -->
+  <div id="app">
+    <header class="appbar">
+      <div class="id-block">
+        <div class="avatar" id="avaInit">-</div>
+        <div class="id-text"><div class="name" id="idName">-</div><div class="co" id="idCompany">-</div></div>
+      </div>
+      <button class="logout" onclick="doLogout()">ออกจากระบบ</button>
+    </header>
+
+    <div class="banner"><span>🔒</span><span>ข้อมูลเชื่อมต่อฐานข้อมูลกลางของ EleXa — <b>ผรม. เห็นได้เฉพาะข้อมูลของทีมตัวเอง</b> เท่านั้น</span></div>
+
+    <div class="context-bar">
+      <div class="field"><label>โครงการ / สถานี</label><input type="text" id="ctxProject" placeholder="ชื่อโครงการ" oninput="saveIdentity()"></div>
+      <div class="field"><label>สถานที่ปฏิบัติงาน</label><input type="text" id="ctxLocation" placeholder="สถานที่" oninput="saveIdentity()"></div>
+    </div>
+
+    <main id="mainScroll">
+      <section class="tab-panel active" id="tab-plan">
+        <div class="card">
+          <h2>📋 แผนก่อนวันเริ่มงาน</h2>
+          <p class="card-sub">กรอกก่อนเริ่มปฏิบัติงานทุกครั้ง แล้วกด "ส่งขออนุมัติเข้างาน" เพื่อรอการอนุมัติจากลูกค้า/ผู้ควบคุมงานก่อนเข้าพื้นที่</p>
+          <div class="row2">
+            <div class="field"><label>วันที่ปฏิบัติงาน</label><input type="date" id="pDate"></div>
+            <div class="field"><label>จำนวนผู้ปฏิบัติงาน</label><input type="number" id="pCrew" min="1" placeholder="คน"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>เวลาเริ่มงาน (แผน)</label><input type="time" id="pStart"></div>
+            <div class="field"><label>เวลาเสร็จงาน (แผน)</label><input type="time" id="pEnd"></div>
+          </div>
+          <div class="field"><label>หัวหน้าทีม / ผู้ควบคุมงาน</label><input type="text" id="pSupervisor" placeholder="ชื่อผู้ควบคุมงานหน้างาน"></div>
+          <div class="field"><label>ขอบเขตงานวันนี้</label><textarea id="pScope" placeholder="อธิบายงานที่จะทำในวันนี้"></textarea></div>
+          <div class="field"><label>เครื่องมือ / อุปกรณ์หลักที่ใช้</label><textarea id="pTools" placeholder="เช่น เครื่องมือช่าง, รถเครน, เครื่องทดสอบ ฯลฯ"></textarea></div>
+          <div class="field"><label>ความเสี่ยงที่คาดว่าจะพบ</label><textarea id="pRisk" placeholder="ระบุความเสี่ยงที่อาจเกิดขึ้นหน้างาน"></textarea></div>
+          <div class="field"><label>มาตรการป้องกัน</label><textarea id="pMitigation" placeholder="มาตรการ/วิธีป้องกันความเสี่ยงข้างต้น"></textarea></div>
+          <div class="field">
+            <label>ลายเซ็นผู้จัดทำแผน</label>
+            <canvas class="sig-box" id="sigPlan"></canvas>
+            <div class="sig-actions"><span>ลงชื่อด้วยนิ้วหรือปากกาสไตลัส</span><button class="btn btn-ghost btn-sm" onclick="clearSig('sigPlan')">ล้างลายเซ็น</button></div>
+          </div>
+          <div class="actions-row">
+            <button class="btn btn-ghost" onclick="resetForm('plan')">ล้างฟอร์ม</button>
+            <button class="btn btn-primary" id="btnPlan" onclick="submitPlan()">ส่งขออนุมัติเข้างาน</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-checklist">
+        <div class="card">
+          <h2>✅ Checklist ความปลอดภัยก่อนทำงาน</h2>
+          <p class="card-sub">ตรวจสอบทุกหัวข้อก่อนเริ่มปฏิบัติงานหน้างานทุกวัน หากข้อใดไม่ผ่านให้ระบุเหตุผลในช่องหมายเหตุ</p>
+          <div class="progress-wrap">
+            <div class="progress-top"><span>ความครบถ้วน</span><span id="progLabel">0%</span></div>
+            <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+          </div>
+          <div id="checklistCats"></div>
+          <div class="field" style="margin-top:6px;"><label>ผู้ตรวจสอบ</label><input type="text" id="cInspector" placeholder="ชื่อผู้ตรวจสอบ Checklist"></div>
+          <div class="field">
+            <label>ลายเซ็นผู้ตรวจสอบ</label>
+            <canvas class="sig-box" id="sigChecklist"></canvas>
+            <div class="sig-actions"><span>ลงชื่อด้วยนิ้วหรือปากกาสไตลัส</span><button class="btn btn-ghost btn-sm" onclick="clearSig('sigChecklist')">ล้างลายเซ็น</button></div>
+          </div>
+          <div class="actions-row">
+            <button class="btn btn-ghost" onclick="resetForm('checklist')">ล้างฟอร์ม</button>
+            <button class="btn btn-primary" id="btnChecklist" onclick="submitChecklist()">บันทึก Checklist</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-diary">
+        <div class="card">
+          <h2>📓 บันทึกประจำวัน (Diary Report)</h2>
+          <p class="card-sub">สรุปผลการปฏิบัติงานประจำวัน พร้อมรูปถ่ายหน้างาน</p>
+          <div class="row2">
+            <div class="field"><label>วันที่</label><input type="date" id="dDate"></div>
+            <div class="field"><label>ผู้รายงาน</label><input type="text" id="dReporter" placeholder="ชื่อผู้รายงาน"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>เวลาเริ่ม</label><input type="time" id="dStart"></div>
+            <div class="field"><label>เวลาเสร็จ</label><input type="time" id="dEnd"></div>
+          </div>
+          <div class="field"><label>งานที่ดำเนินการ</label><textarea id="dWork" placeholder="สรุปงานที่ทำในวันนี้"></textarea></div>
+          <div class="field"><label>ปัญหา / อุปสรรค</label><textarea id="dIssue" placeholder="ระบุปัญหาที่พบ (ถ้ามี)"></textarea></div>
+          <div class="field"><label>แผนงานวันถัดไป</label><textarea id="dNext" placeholder="แผนงานที่จะทำต่อในวันถัดไป"></textarea></div>
+          <div class="field">
+            <label>สถานะโดยรวม</label>
+            <div class="chip-select" id="dStatusChips">
+              <div class="chip" data-c="notstarted">⚪ ยังไม่เริ่ม</div>
+              <div class="chip" data-c="doing">🔵 กำลังดำเนินการ</div>
+              <div class="chip" data-c="done">🟢 เสร็จตามแผน</div>
+              <div class="chip" data-c="issue">🔴 ติดปัญหา/ล่าช้า</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>แนบรูปภาพหน้างาน</label>
+            <div class="drop" onclick="document.getElementById('dPhotoInput').click()">📷 แตะเพื่อเลือกรูปภาพ (รองรับหลายไฟล์ — บีบอัดอัตโนมัติ)</div>
+            <input type="file" id="dPhotoInput" accept="image/*" multiple style="display:none" onchange="handlePhotos(event)">
+            <div class="thumbs" id="dThumbs"></div>
+          </div>
+          <div class="actions-row">
+            <button class="btn btn-ghost" onclick="resetForm('diary')">ล้างฟอร์ม</button>
+            <button class="btn btn-primary" id="btnDiary" onclick="submitDiary()">บันทึก Diary</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-history">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h2 style="font-size:17px;margin:0;">ประวัติของฉัน</h2>
+          <button class="btn btn-ghost btn-sm" onclick="exportAll()">⬇ Export JSON</button>
+        </div>
+        <div class="filter-row" id="historyFilters">
+          <div class="chip active" data-f="all">ทั้งหมด</div>
+          <div class="chip" data-f="plan">แผนงาน</div>
+          <div class="chip" data-f="checklist">Checklist</div>
+          <div class="chip" data-f="diary">Diary</div>
+        </div>
+        <div id="historyList"></div>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <button class="tbtn active" data-tab="plan" onclick="switchTab('plan')"><span class="ic">📋</span><span class="lb">แผนงาน</span></button>
+      <button class="tbtn" data-tab="checklist" onclick="switchTab('checklist')"><span class="ic">✅</span><span class="lb">Checklist</span></button>
+      <button class="tbtn" data-tab="diary" onclick="switchTab('diary')"><span class="ic">📓</span><span class="lb">Diary</span></button>
+      <button class="tbtn" data-tab="history" onclick="switchTab('history')"><span class="ic">🕑</span><span class="lb">ประวัติ</span></button>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-bg" id="modalBg" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <div class="modal-head"><h3 id="modalTitle">รายละเอียด</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+      <div id="modalBody"></div>
+      <div class="actions-row">
+        <button class="btn btn-ghost" onclick="printRecordFromModal()">🖨️ พิมพ์ / PDF</button>
+        <button class="btn btn-danger" onclick="deleteRecordFromModal()">ลบรายการนี้</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="printArea"></div>
+</div>
+
+<script>
+/* ================= IDENTITY (client-side prefill only — auth is server cookie) ================= */
+const K_IDENTITY = "elexa_contractor_identity_v1";
+function getIdentity(){ try{return JSON.parse(localStorage.getItem(K_IDENTITY)||"{}");}catch(e){return {};} }
+function saveIdentity(){
+  const id = { name: val('gName') || currentName, company: val('gCompany') || currentCompany, project: val('ctxProject'), location: val('ctxLocation') };
+  localStorage.setItem(K_IDENTITY, JSON.stringify(id));
+}
+let currentName = "", currentCompany = "";
+
+function val(id){ const el=document.getElementById(id); return el? el.value.trim() : ""; }
+function setVal(id,v){ const el=document.getElementById(id); if(el) el.value = v || ""; }
+
+/* ================= TOAST ================= */
+let toastTimer;
+function showToast(msg, isErr){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('err', !!isErr);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ================= API HELPERS ================= */
+async function api(path, opts){
+  const res = await fetch(path, Object.assign({ headers: {"Content-Type":"application/json"} }, opts));
+  let data = null;
+  try{ data = await res.json(); }catch(e){}
+  if(!res.ok){
+    const err = new Error((data && (data.message || data.error)) || ("HTTP " + res.status));
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+/* ================= LOGIN / LOGOUT ================= */
+async function checkAuthOnLoad(){
+  try{
+    const data = await api('/api/auth/status');
+    if(data.authenticated && data.role === 'client'){ window.location.replace('/client.html'); return; }
+    if(data.authenticated){ await enterApp(); return; }
+  }catch(e){}
+  const id = getIdentity();
+  setVal('gName', id.name); setVal('gCompany', id.company);
+  document.getElementById('gate').style.display = 'flex';
+}
+
+async function doLogin(){
+  const code = val('gCode');
+  const err = document.getElementById('gateError');
+  err.style.display = 'none';
+
+  if(!code){ err.textContent = "กรุณากรอกรหัสเชิญ"; err.style.display='block'; return; }
+  if(!val('gName')){ err.textContent = "กรุณากรอกชื่อ-นามสกุลผู้ปฏิบัติงาน"; err.style.display='block'; return; }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังตรวจสอบ...';
+  try{
+    await api('/api/auth/invite', { method:'POST', body: JSON.stringify({ code }) });
+    currentName = val('gName'); currentCompany = val('gCompany');
+    saveIdentity();
+    await enterApp();
+  }catch(e){
+    err.textContent = e.status === 403 ? "รหัสเชิญไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง" : "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่";
+    err.style.display = 'block';
+  }finally{
+    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+  }
+}
+
+async function doLogout(){
+  try{ await api('/api/auth/logout', { method:'POST' }); }catch(e){}
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('gate').style.display = 'flex';
+}
+
+async function enterApp(){
+  const id = getIdentity();
+  currentName = id.name || currentName || "ผู้ปฏิบัติงาน";
+  currentCompany = id.company || currentCompany || "";
+
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('idName').textContent = currentName;
+  document.getElementById('idCompany').textContent = currentCompany || 'ไม่ระบุบริษัท';
+  document.getElementById('avaInit').textContent = currentName.trim().charAt(0) || '?';
+
+  setVal('ctxProject', id.project);
+  setVal('ctxLocation', id.location);
+
+  const today = new Date().toISOString().slice(0,10);
+  setVal('pDate', today);
+  setVal('dDate', today);
+  setVal('dReporter', currentName);
+
+  buildChecklist();
+  initSigPads();
+  renderHistory();
+}
+
+/* ================= TABS ================= */
+function switchTab(name){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.getElementById('mainScroll').scrollTop = 0;
+  if(name==='history') renderHistory();
+}
+
+/* ================= SIGNATURE PAD ================= */
+const sigPads = {};
+function initSigPads(){
+  ['sigPlan','sigChecklist'].forEach(id=>{
+    const canvas = document.getElementById(id);
+    if(!canvas || sigPads[id]) return;
+    const ctx = canvas.getContext('2d');
+    function resize(){
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * 2; canvas.height = rect.height * 2;
+      ctx.scale(2,2); ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.strokeStyle = '#182633';
+    }
+    resize();
+    let drawing = false, empty = true;
+    function pos(e){ const rect = canvas.getBoundingClientRect(); const p = e.touches? e.touches[0] : e; return { x: p.clientX-rect.left, y: p.clientY-rect.top }; }
+    function start(e){ drawing = true; empty=false; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); }
+    function move(e){ if(!drawing) return; const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); }
+    function end(){ drawing=false; }
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
+    canvas.addEventListener('touchstart', start, {passive:false});
+    canvas.addEventListener('touchmove', move, {passive:false});
+    canvas.addEventListener('touchend', end);
+    sigPads[id] = { clear:()=>{ ctx.clearRect(0,0,canvas.width,canvas.height); empty=true; }, dataURL:()=> empty? "" : canvas.toDataURL('image/png') };
+  });
+}
+function clearSig(id){ if(sigPads[id]) sigPads[id].clear(); }
+
+/* ================= SAFETY CHECKLIST DATA ================= */
+const CHECKLIST_CATEGORIES = [
+  { title:"อุปกรณ์ป้องกันส่วนบุคคล (PPE)", icon:"🦺", items:["หมวกนิรภัย (Safety Helmet)","รองเท้าเซฟตี้","ถุงมือป้องกันไฟฟ้า","แว่นตานิรภัย","เสื้อสะท้อนแสง"] },
+  { title:"ระบบไฟฟ้า / พลังงาน", icon:"⚡", items:["ตัดไฟและล็อก-ป้ายเตือนเรียบร้อย (LOTO)","ตรวจสอบไม่มีแรงดันไฟฟ้าค้าง (Zero Energy)","พื้นที่ทำงานแห้ง ไม่มีน้ำ/ความชื้นเสี่ยง"] },
+  { title:"พื้นที่ปฏิบัติงาน", icon:"🚧", items:["กั้นเขตพื้นที่ทำงานและติดป้ายเตือน","ทางเดิน/ทางเข้าออกปลอดภัย ไม่มีสิ่งกีดขวาง","แสงสว่างเพียงพอต่อการทำงาน"] },
+  { title:"เครื่องมือและอุปกรณ์", icon:"🛠️", items:["ตรวจสภาพเครื่องมือ/สายไฟก่อนใช้งาน","มีถังดับเพลิงพร้อมใช้งานในพื้นที่"] },
+  { title:"ความพร้อมกรณีฉุกเฉิน", icon:"🚑", items:["ทราบเบอร์ติดต่อฉุกเฉิน/พยาบาล","ทราบจุดรวมพลกรณีเกิดเหตุ","มีชุดปฐมพยาบาลเบื้องต้น"] }
+];
+
+function buildChecklist(){
+  const wrap = document.getElementById('checklistCats');
+  if(wrap.dataset.built) return;
+  let html = "";
+  CHECKLIST_CATEGORIES.forEach((cat, ci)=>{
+    html += `<div class="cat"><div class="cat-title"><span class="cat-icon">${cat.icon}</span>${cat.title}</div>`;
+    cat.items.forEach((item, ii)=>{
+      const id = `c_${ci}_${ii}`;
+      html += `<div class="chk-item" id="wrap_${id}"><input type="checkbox" id="${id}" onchange="onChkChange('${id}')"><div style="flex:1;"><label class="chk-label" for="${id}">${item}</label><textarea class="chk-note" id="note_${id}" placeholder="เหตุผลที่ยังไม่ผ่าน / มาตรการชั่วคราว"></textarea></div></div>`;
+    });
+    html += `</div>`;
+  });
+  wrap.innerHTML = html;
+  wrap.dataset.built = "1";
+  updateProgress();
+}
+function onChkChange(id){
+  const cb = document.getElementById(id);
+  document.getElementById('wrap_'+id).classList.toggle('needs-note', !cb.checked);
+  updateProgress();
+}
+function updateProgress(){
+  const boxes = document.querySelectorAll('#checklistCats input[type=checkbox]');
+  const total = boxes.length;
+  const checked = Array.from(boxes).filter(b=>b.checked).length;
+  const pct = total? Math.round(checked/total*100) : 0;
+  document.getElementById('progFill').style.width = pct+'%';
+  document.getElementById('progLabel').textContent = pct+'% ('+checked+'/'+total+')';
+}
+
+/* ================= STATUS CHIPS / HISTORY FILTER ================= */
+document.addEventListener('click', function(e){
+  const chip = e.target.closest('#dStatusChips .chip');
+  if(chip){ document.querySelectorAll('#dStatusChips .chip').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); }
+  const fchip = e.target.closest('#historyFilters .chip');
+  if(fchip){ document.querySelectorAll('#historyFilters .chip').forEach(c=>c.classList.remove('active')); fchip.classList.add('active'); renderHistory(); }
+});
+function getActiveStatus(){ const a = document.querySelector('#dStatusChips .chip.active'); return a ? a.dataset.c : 'notstarted'; }
+const STATUS_LABEL = { notstarted:"⚪ ยังไม่เริ่ม", doing:"🔵 กำลังดำเนินการ", done:"🟢 เสร็จตามแผน", issue:"🔴 ติดปัญหา/ล่าช้า" };
+const APPROVAL_LABEL = { pending:"⏳ รออนุมัติ", approved:"✅ อนุมัติเข้างานแล้ว", rejected:"❌ ไม่อนุมัติ" };
+const APPROVAL_BADGE_CLASS = { pending:"doing", approved:"done", rejected:"issue" };
+
+/* ================= PHOTOS (compressed dataURL, saved server-side on submit) ================= */
+let photoStore = [];
+function handlePhotos(e){
+  const files = Array.from(e.target.files || []);
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      const img = new Image();
+      img.onload = function(){
+        const maxW = 900;
+        const scale = Math.min(1, maxW / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale; canvas.height = img.height * scale;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        photoStore.push(canvas.toDataURL('image/jpeg', 0.72));
+        renderThumbs();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = "";
+}
+function renderThumbs(){
+  document.getElementById('dThumbs').innerHTML = photoStore.map((src,i)=>`<div class="thumb"><img src="${src}"><div class="rm" onclick="removePhoto(${i})">×</div></div>`).join('');
+}
+function removePhoto(i){ photoStore.splice(i,1); renderThumbs(); }
+
+/* ================= SUBMIT HANDLERS ================= */
+function setBusy(btnId, busy, label){
+  const btn = document.getElementById(btnId);
+  if(busy){ btn.dataset.label = btn.textContent; btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังบันทึก...'; }
+  else{ btn.disabled = false; btn.textContent = label || btn.dataset.label; }
+}
+
+async function submitPlan(){
+  if(!val('pScope')){ showToast("กรุณากรอกขอบเขตงานวันนี้", true); return; }
+  setBusy('btnPlan', true);
+  try{
+    const payload = {
+      reporter: currentName, company: currentCompany,
+      project: val('ctxProject'), location: val('ctxLocation'),
+      date: val('pDate'), crew: val('pCrew'), start: val('pStart'), end: val('pEnd'),
+      supervisor: val('pSupervisor'), scope: val('pScope'), tools: val('pTools'),
+      risk: val('pRisk'), mitigation: val('pMitigation'),
+      signature: sigPads.sigPlan ? sigPads.sigPlan.dataURL() : ""
+    };
+    await api('/api/contractor/record', { method:'POST', body: JSON.stringify({ type:'plan', payload }) });
+    resetForm('plan');
+    showToast("ส่งแผนงานเพื่อขออนุมัติเข้างานแล้ว");
+  }catch(e){ showToast("บันทึกไม่สำเร็จ: " + e.message, true); }
+  finally{ setBusy('btnPlan', false, 'ส่งขออนุมัติเข้างาน'); }
+}
+
+async function submitChecklist(){
+  const items = [];
+  CHECKLIST_CATEGORIES.forEach((cat, ci)=>{
+    cat.items.forEach((item, ii)=>{
+      const id = `c_${ci}_${ii}`;
+      items.push({ category: cat.title, item, passed: document.getElementById(id).checked, note: val('note_'+id) });
+    });
+  });
+  const total = items.length;
+  const passed = items.filter(i=>i.passed).length;
+  setBusy('btnChecklist', true);
+  try{
+    const payload = {
+      reporter: currentName, company: currentCompany,
+      project: val('ctxProject'), location: val('ctxLocation'),
+      inspector: val('cInspector') || currentName,
+      items, total, passed, pct: total? Math.round(passed/total*100):0,
+      signature: sigPads.sigChecklist ? sigPads.sigChecklist.dataURL() : ""
+    };
+    const result = await api('/api/contractor/record', { method:'POST', body: JSON.stringify({ type:'checklist', payload }) });
+    resetForm('checklist');
+    showToast(`บันทึก Checklist แล้ว (${result.record.payload.pct}% ผ่าน)`);
+  }catch(e){ showToast("บันทึกไม่สำเร็จ: " + e.message, true); }
+  finally{ setBusy('btnChecklist', false, 'บันทึก Checklist'); }
+}
+
+async function submitDiary(){
+  if(!val('dWork')){ showToast("กรุณากรอกงานที่ดำเนินการ", true); return; }
+  setBusy('btnDiary', true);
+  try{
+    const payload = {
+      reporter: val('dReporter') || currentName, company: currentCompany,
+      project: val('ctxProject'), location: val('ctxLocation'),
+      date: val('dDate'), start: val('dStart'), end: val('dEnd'),
+      work: val('dWork'), issue: val('dIssue'), next: val('dNext'),
+      status: getActiveStatus(), photos: photoStore.slice()
+    };
+    await api('/api/contractor/record', { method:'POST', body: JSON.stringify({ type:'diary', payload }) });
+    resetForm('diary');
+    showToast("บันทึก Diary แล้ว");
+  }catch(e){ showToast("บันทึกไม่สำเร็จ: " + e.message, true); }
+  finally{ setBusy('btnDiary', false, 'บันทึก Diary'); }
+}
+
+function resetForm(type){
+  if(type==='plan'){
+    ['pCrew','pStart','pEnd','pSupervisor','pScope','pTools','pRisk','pMitigation'].forEach(id=>setVal(id,''));
+    setVal('pDate', new Date().toISOString().slice(0,10));
+    clearSig('sigPlan');
+  }
+  if(type==='checklist'){
+    document.querySelectorAll('#checklistCats input[type=checkbox]').forEach(cb=>{ cb.checked=false; });
+    document.querySelectorAll('#checklistCats textarea').forEach(t=>t.value='');
+    document.querySelectorAll('.chk-item').forEach(w=>w.classList.remove('needs-note'));
+    setVal('cInspector','');
+    clearSig('sigChecklist');
+    updateProgress();
+  }
+  if(type==='diary'){
+    ['dStart','dEnd','dWork','dIssue','dNext'].forEach(id=>setVal(id,''));
+    setVal('dDate', new Date().toISOString().slice(0,10));
+    setVal('dReporter', currentName);
+    document.querySelectorAll('#dStatusChips .chip').forEach(c=>c.classList.remove('active'));
+    photoStore = []; renderThumbs();
+  }
+}
+
+/* ================= HISTORY ================= */
+const TYPE_LABEL = { plan:"แผนก่อนวันเริ่มงาน", checklist:"Checklist ความปลอดภัย", diary:"Diary Report" };
+let recordsCache = [];
+
+async function renderHistory(){
+  const list = document.getElementById('historyList');
+  list.innerHTML = `<div class="empty-state">กำลังโหลด...</div>`;
+  const filterEl = document.querySelector('#historyFilters .chip.active');
+  const filter = filterEl ? filterEl.dataset.f : 'all';
+  try{
+    const data = await api('/api/contractor/records?type=' + encodeURIComponent(filter));
+    recordsCache = data.records || [];
+  }catch(e){
+    list.innerHTML = `<div class="empty-state"><div class="ei">⚠️</div>โหลดประวัติไม่สำเร็จ<br>${e.message}</div>`;
+    return;
+  }
+
+  if(recordsCache.length === 0){
+    list.innerHTML = `<div class="empty-state"><div class="ei">🗂️</div>ยังไม่มีบันทึกในหมวดนี้<br>เริ่มบันทึกได้จากแท็บด้านล่าง</div>`;
+    return;
+  }
+
+  list.innerHTML = recordsCache.map(r=>{
+    const p = r.payload || {};
+    const dt = new Date(r.createdAt);
+    const dtStr = dt.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + dt.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    let title = "", badge = "";
+    if(r.type==='plan'){
+      title = p.scope ? p.scope.slice(0,60) : "แผนก่อนวันเริ่มงาน";
+      const st = (p.approval && p.approval.status) || 'pending';
+      badge = `<span class="badge ${APPROVAL_BADGE_CLASS[st]}">${APPROVAL_LABEL[st]}</span>`;
+    }
+    if(r.type==='checklist'){ title = `ผ่าน ${p.passed}/${p.total} รายการ`; badge = `<span class="badge ${p.pct===100?'done':(p.pct>=50?'doing':'issue')}">${p.pct}%</span>`; }
+    if(r.type==='diary'){ title = p.work ? p.work.slice(0,60) : "Diary Report"; badge = `<span class="badge ${p.status}">${STATUS_LABEL[p.status]||''}</span>`; }
+    return `
+      <div class="rec-card">
+        <div class="rec-top">
+          <div>
+            <div class="rec-type">${TYPE_LABEL[r.type]}</div>
+            <div class="rec-title">${escapeHtml(title)}</div>
+            <div class="rec-meta">${dtStr} · ${escapeHtml(p.project||'ไม่ระบุโครงการ')}</div>
+          </div>
+          ${badge}
+        </div>
+        <div class="rec-actions">
+          <button class="btn btn-ghost btn-sm" onclick="viewRecord('${r.id}')">ดูรายละเอียด</button>
+          <button class="btn btn-ghost btn-sm" onclick="printRecord('${r.id}')">พิมพ์</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ================= MODAL / VIEW / PRINT / DELETE ================= */
+let modalRecordId = null;
+function viewRecord(id){
+  const r = recordsCache.find(x=>x.id===id);
+  if(!r) return;
+  modalRecordId = id;
+  document.getElementById('modalTitle').textContent = TYPE_LABEL[r.type];
+  document.getElementById('modalBody').innerHTML = buildDetailHtml(r);
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('open'); modalRecordId=null; }
+function deleteRecordFromModal(){ if(modalRecordId) deleteRecord(modalRecordId); closeModal(); }
+async function deleteRecord(id){
+  if(!confirm('ต้องการลบรายการนี้หรือไม่?')) return;
+  try{
+    await api('/api/contractor/record/' + encodeURIComponent(id), { method:'DELETE' });
+    showToast('ลบรายการแล้ว');
+    renderHistory();
+  }catch(e){ showToast('ลบไม่สำเร็จ: ' + e.message, true); }
+}
+
+function buildDetailHtml(r){
+  const p = r.payload || {};
+  const rowsMap = {
+    plan: [
+      ['วันที่', p.date],['โครงการ/สถานี', p.project],['สถานที่', p.location],
+      ['ผู้จัดทำ', p.reporter+(p.company? ' · '+p.company : '')],
+      ['จำนวนผู้ปฏิบัติงาน', p.crew],['เวลา (แผน)', (p.start||'-')+' - '+(p.end||'-')],
+      ['หัวหน้าทีม/ผู้ควบคุมงาน', p.supervisor],['ขอบเขตงาน', p.scope],
+      ['เครื่องมือ/อุปกรณ์', p.tools],['ความเสี่ยงที่คาดว่าจะพบ', p.risk],['มาตรการป้องกัน', p.mitigation]
+    ],
+    checklist: [
+      ['โครงการ/สถานี', p.project],['สถานที่', p.location],
+      ['ผู้ตรวจสอบ', p.inspector],['ผลรวม', `ผ่าน ${p.passed}/${p.total} รายการ (${p.pct}%)`]
+    ],
+    diary: [
+      ['วันที่', p.date],['โครงการ/สถานี', p.project],['สถานที่', p.location],
+      ['ผู้รายงาน', p.reporter+(p.company? ' · '+p.company : '')],
+      ['เวลา', (p.start||'-')+' - '+(p.end||'-')],['งานที่ดำเนินการ', p.work],
+      ['ปัญหา/อุปสรรค', p.issue],['แผนงานวันถัดไป', p.next],['สถานะ', STATUS_LABEL[p.status]]
+    ]
+  };
+  let html = rowsMap[r.type].filter(([k,v])=>v).map(([k,v])=>`<div class="detail-row"><div class="dk">${k}</div><div class="dv">${escapeHtml(String(v))}</div></div>`).join('');
+
+  if(r.type==='checklist' && Array.isArray(p.items)){
+    html += p.items.map(it=>`<div class="detail-row"><div class="dk">${it.category}</div><div class="dv">${it.passed?'✅':'❌'} ${escapeHtml(it.item)}${it.note? ' — '+escapeHtml(it.note) : ''}</div></div>`).join('');
+  }
+  if(r.type==='diary' && p.photos && p.photos.length){
+    html += `<div class="detail-row"><div class="dk">รูปภาพหน้างาน</div><div class="detail-imgs">${p.photos.map(src=>`<img src="${src}">`).join('')}</div></div>`;
+  }
+  if(r.type==='plan' && p.approval){
+    const st = p.approval.status || 'pending';
+    const dt = p.approval.reviewedAt ? new Date(p.approval.reviewedAt).toLocaleString('th-TH') : '';
+    html += `<div class="detail-row"><div class="dk">สถานะการอนุมัติเข้างาน</div><div class="dv">${APPROVAL_LABEL[st]}${p.approval.reviewerName? ' — โดย '+escapeHtml(p.approval.reviewerName) : ''}${dt? ' ('+dt+')' : ''}${p.approval.note? '\\nหมายเหตุ: '+p.approval.note : ''}</div></div>`;
+  }
+  if(p.signature){
+    html += `<div class="detail-row"><div class="dk">ลายเซ็น</div><img src="${p.signature}" style="max-width:220px;background:#fff;border-radius:8px;border:1px solid var(--line);margin-top:4px;"></div>`;
+  }
+  return html;
+}
+
+function printRecord(id){ modalRecordId = id; printRecordFromModal(); }
+function printRecordFromModal(){
+  const r = recordsCache.find(x=>x.id===modalRecordId);
+  if(!r) return;
+  const dt = new Date(r.createdAt).toLocaleString('th-TH');
+  const area = document.getElementById('printArea');
+  area.innerHTML = `
+    <h2>⚡ EleXa by EGAT — ${TYPE_LABEL[r.type]}</h2>
+    <p style="color:#555;">บันทึกเมื่อ ${dt}</p>
+    <div style="font-family:sans-serif;font-size:14px;line-height:1.7;">${buildDetailHtml(r).replace(/class="dk"/g,'style="font-weight:700;color:#333;margin-top:8px;"').replace(/class="dv"/g,'style="white-space:pre-wrap;"')}</div>
+  `;
+  window.print();
+}
+
+/* ================= EXPORT ALL ================= */
+async function exportAll(){
+  try{
+    const data = await api('/api/contractor/records?type=all');
+    const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), reporter: currentName, company: currentCompany, records: data.records }, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'elexa-contractor-records.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){ showToast('Export ไม่สำเร็จ: ' + e.message, true); }
+}
+
+/* ================= INIT ================= */
+checkAuthOnLoad();
+</script>
+</body>
+</html>

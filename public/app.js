@@ -83,6 +83,14 @@ await bootstrap();
 
 async function bootstrap() {
   const auth = await getAuthStatus();
+  if (auth.authenticated && auth.role === "contractor") {
+    window.location.replace("/contractor.html");
+    return;
+  }
+  if (auth.authenticated && auth.role === "client") {
+    window.location.replace("/client.html");
+    return;
+  }
   if (auth.authenticated) {
     showDashboard();
     await loadState();
@@ -178,8 +186,19 @@ async function submitInviteCode(event) {
       throw new Error(data.error || "รหัสเชิญไม่ถูกต้อง");
     }
 
+    const data = await response.json().catch(() => ({}));
     elements.inviteCodeInput.value = "";
     elements.authMessage.textContent = "";
+
+    if (data.role === "contractor") {
+      window.location.href = "/contractor.html";
+      return;
+    }
+    if (data.role === "client") {
+      window.location.href = "/client.html";
+      return;
+    }
+
     showDashboard();
     await loadState();
     connectLiveUpdates();
