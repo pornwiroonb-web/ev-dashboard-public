@@ -88,6 +88,15 @@ function resolveProjectId(name, projects) {
 
 const port = Number(process.env.PORT || 3000);
 
+// Total Solution Planner reads/writes this same Google Apps Script Web App
+// directly from the browser (public/planner.html) — it has its own project
+// registry (id like "1.1", name = contractor company, site = client/site
+// name) totally separate from this server's own `state.projects`. The
+// import feature below lets an admin pull that registry in here as a
+// reviewed, one-time link/copy — never a silent live sync.
+const plannerAppsScriptUrl = process.env.EV_PLANNER_URL
+  || "https://script.google.com/macros/s/AKfycbxtpf9aNev-BTCPj2WckvLukuZJHlrBnmOFnvo7O2mS_5wQpsKzfYA1pmbGX_cAJ8nq6A/exec";
+
 const mimeTypes = new Map([
   [".html", "text/html; charset=utf-8"],
   [".css", "text/css; charset=utf-8"],
@@ -340,6 +349,23 @@ const server = http.createServer(async (req, res) => {
       }
       const result = await deleteInviteCode(codeParam);
       return sendJson(res, result.ok ? 200 : result.status || 400, result);
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/planner-import-preview") {
+      if (!requireAdmin(req, res)) return;
+      try {
+        const items = await buildPlannerImportPreview();
+        return sendJson(res, 200, { items });
+      } catch (error) {
+        return sendJson(res, 502, { error: error.message || "โหลดข้อมูลจาก Planner ไม่สำเร็จ" });
+      }
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/planner-import-commit") {
+      if (!requireAdmin(req, res)) return;
+      const body = await readJson(req);
+      const result = await commitPlannerImport(body?.items);
+      return sendJson(res, 200, result);
     }
 
     if (req.method === "DELETE" && url.pathname.startsWith("/api/contractor/record/")) {
@@ -862,6 +888,109 @@ async function deleteInviteCode(code) {
   state.inviteCodes.splice(idx, 1);
   await saveState();
   return { ok: true };
+}
+
+// ---- Total Solution Planner import (preview → admin confirms → commit) ----
+async function fetchPlannerData() {
+  const res = await fetch(plannerAppsScriptUrl, { method: "GET" });
+  if (!res.ok) throw new Error(`Planner ตอบกลับผิดพลาด: HTTP ${res.status}`);
+  const data = await res.json();
+  if (!data || !Array.isArray(data.projects)) throw new Error("รูปแบบข้อมูลจาก Planner ไม่ตรงตามที่คาด (ไม่มี projects)");
+  return data;
+}
+
+function normalizeForMatch(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, " ")
+    .trim();
+}
+function matchTokens(text) {
+  return normalizeForMatch(text)
+    .split(" ")
+    .filter((t) => t.length >= 3);
+}
+// Suggests (never assumes) which existing project a Planner entry belongs
+// to, by looking for a shared, reasonably specific word (>=3 chars) between
+// Planner's site/company name and the project's own name. Longer/more
+// specific shared words score higher. This only ever produces a SUGGESTION
+// for the admin's review screen — nothing here writes to state.
+function suggestProjectMatch(plannerEntry, projects) {
+  const tags = [...matchTokens(plannerEntry.site), ...matchTokens(plannerEntry.name)];
+  let best = null;
+  let bestScore = 0;
+  for (const project of projects) {
+    const projectNorm = normalizeForMatch(project.name);
+    let score = 0;
+    for (const tag of tags) {
+      if (projectNorm.includes(tag)) score += tag.length;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = project;
+    }
+  }
+  return bestScore >= 4 ? best : null;
+}
+
+async function buildPlannerImportPreview() {
+  const plannerData = await fetchPlannerData();
+  const plannerProjects = plannerData.projects || [];
+  return plannerProjects.map((p) => {
+    const alreadyLinked = (state.projects || []).find((sp) => sp.plannerId === p.id) || null;
+    const suggestion = alreadyLinked ? null : suggestProjectMatch(p, state.projects || []);
+    return {
+      plannerId: p.id,
+      plannerName: p.name || "",
+      plannerSite: p.site || "",
+      plannerPkg: p.pkg || "",
+      plannerType: p.type || "",
+      alreadyLinkedProjectId: alreadyLinked ? alreadyLinked.id : null,
+      alreadyLinkedProjectName: alreadyLinked ? alreadyLinked.name : null,
+      suggestedProjectId: suggestion ? suggestion.id : null,
+      suggestedProjectName: suggestion ? suggestion.name : null,
+    };
+  });
+}
+
+async function commitPlannerImport(items) {
+  let created = 0;
+  let linked = 0;
+  let skipped = 0;
+  for (const item of Array.isArray(items) ? items : []) {
+    if (!item || item.action === "skip") {
+      skipped += 1;
+      continue;
+    }
+    if (item.action === "link" && typeof item.projectId === "string") {
+      const project = state.projects.find((p) => p.id === item.projectId);
+      if (project) {
+        project.plannerId = item.plannerId;
+        linked += 1;
+      }
+      continue;
+    }
+    if (item.action === "create") {
+      const name = (item.plannerSite && item.plannerSite.trim()) || item.plannerName || `Planner ${item.plannerId}`;
+      const project = {
+        id: `project-${randomUUID()}`,
+        name,
+        client: item.plannerName || "",
+        location: item.plannerSite || "",
+        owner: "Project Engineer Team",
+        dueDate: "",
+        showChecklistToClient: false,
+        plannerId: item.plannerId,
+        phases: createDefaultPhases(),
+      };
+      state.projects.unshift(project);
+      created += 1;
+    }
+  }
+  state.updatedAt = new Date().toISOString();
+  await saveState();
+  broadcast({ type: "state-updated", updatedAt: state.updatedAt });
+  return { ok: true, created, linked, skipped };
 }
 
 async function reviewPlanRecord(auth, id, body) {
