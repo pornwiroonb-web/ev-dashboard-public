@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>นำเข้าโครงการจาก Planner | Total Solutions</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="/auth-guard.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#070c13; --panel: rgba(15, 22, 32, 0.6); --panel-strong:#0f1a29;
+    --line: rgba(242, 183, 5, 0.16); --text:#eef3f9; --muted:#8296b0;
+    --accent:#f2b705; --accent-2:#f7c948; --accent-3:#34d399; --bad:#f87171;
+    --font-ui:'Noto Sans Thai', sans-serif; --font-display:'Space Grotesk','Noto Sans Thai', sans-serif;
+    box-sizing:border-box;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    background: radial-gradient(circle at 15% 0%, rgba(242,183,5,.10), transparent 42%), radial-gradient(circle at 100% 20%, rgba(58,120,200,.10), transparent 38%), linear-gradient(180deg,#050a10 0%,#0a1420 55%,#0c1826 100%);
+    color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100%;
+  }
+  h1,h2,h3{font-family:var(--font-display);}
+  .shell{max-width:900px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+  .stripe{height:2px;flex:none;background:linear-gradient(90deg,transparent,var(--accent) 30%,var(--accent-2) 50%,var(--accent) 70%,transparent);}
+  header.appbar{flex:none;padding:16px 24px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;backdrop-filter:blur(10px);}
+  header.appbar h1{font-size:18px;margin:0;}
+  header.appbar a{color:var(--muted);font-size:13px;text-decoration:none;}
+  header.appbar a:hover{color:var(--accent);}
+  main{flex:1;padding:22px 24px 60px;}
+  .intro{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;font-size:13.5px;line-height:1.7;color:var(--muted);margin-bottom:20px;}
+  .intro b{color:var(--accent-2);}
+  .btn{appearance:none;border:none;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font-display);}
+  .btn-primary{background:linear-gradient(135deg,var(--accent-2),var(--accent) 55%,#d9a300);color:#1a1200;}
+  .btn-primary:disabled{opacity:.5;cursor:default;}
+  .btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--line);}
+  .row{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px;}
+  .row-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px;}
+  .row-head .pid{font-family:var(--font-display);font-weight:700;color:var(--accent);font-size:13px;}
+  .row-head .pname{font-size:14.5px;font-weight:600;margin-top:2px;}
+  .row-head .psite{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .row select{width:100%;background:var(--panel-strong);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font-size:13.5px;}
+  .tag{padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;flex:none;height:fit-content;}
+  .tag.suggested{background:rgba(52,211,153,.16);color:var(--accent-3);}
+  .tag.nomatch{background:rgba(248,113,113,.14);color:var(--bad);}
+  .tag.linked{background:rgba(77,168,255,.16);color:#bfe2ff;}
+  .summary{margin-top:20px;font-size:13.5px;color:var(--accent-3);}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="stripe"></div>
+  <header class="appbar">
+    <h1>นำเข้าโครงการจาก Total Solution Planner</h1>
+    <a href="/">← กลับแดชบอร์ดหลัก</a>
+  </header>
+  <main>
+    <div class="intro">
+      ดึงรายชื่อโครงการจาก Planner มาเทียบกับโครงการที่มีอยู่ในระบบนี้ — ระบบจะ<b>แนะนำ</b>การจับคู่ให้เฉพาะที่มั่นใจจริงๆ (ชื่อ/สถานที่ตรงกันชัดเจน) ส่วนอันที่ไม่มั่นใจจะให้เลือกเองทั้งหมด <b>ไม่มีอะไรถูกบันทึกจนกว่าจะกด "ยืนยันการนำเข้า" ด้านล่าง</b>
+    </div>
+    <button class="btn btn-primary" id="loadBtn" onclick="loadPreview()">ดึงข้อมูลจาก Planner</button>
+    <div id="list" style="margin-top:20px;"></div>
+    <div id="commitArea" style="display:none;margin-top:10px;">
+      <button class="btn btn-primary" id="commitBtn" onclick="commitImport()">✓ ยืนยันการนำเข้าตามที่เลือกไว้</button>
+      <div class="summary" id="summary"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{})); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+let previewItems = [];
+let allProjects = [];
+
+async function loadPreview(){
+  const btn = document.getElementById('loadBtn');
+  btn.disabled = true; btn.textContent = 'กำลังโหลด...';
+  try{
+    const [previewRes, projRes] = await Promise.all([
+      fetch('/api/admin/planner-import-preview'),
+      fetch('/api/contractor/projects'),
+    ]);
+    if(!previewRes.ok){
+      const err = await previewRes.json().catch(()=>({}));
+      throw new Error(err.error || 'โหลดไม่สำเร็จ');
+    }
+    previewItems = (await previewRes.json()).items || [];
+    allProjects = (await projRes.json()).projects || [];
+    render();
+    document.getElementById('commitArea').style.display = previewItems.length ? 'block' : 'none';
+  }catch(e){
+    document.getElementById('list').innerHTML = `<div class="empty-state">โหลดไม่สำเร็จ: ${escapeHtml(e.message)}</div>`;
+  }finally{
+    btn.disabled = false; btn.textContent = 'ดึงข้อมูลจาก Planner';
+  }
+}
+
+function render(){
+  const list = document.getElementById('list');
+  if(previewItems.length === 0){
+    list.innerHTML = `<div class="empty-state">ไม่พบโครงการใน Planner</div>`;
+    return;
+  }
+  list.innerHTML = previewItems.map((item, i) => {
+    let tag = '';
+    if(item.alreadyLinkedProjectId){
+      tag = `<span class="tag linked">เชื่อมไว้แล้ว: ${escapeHtml(item.alreadyLinkedProjectName)}</span>`;
+    } else if(item.suggestedProjectId){
+      tag = `<span class="tag suggested">ระบบแนะนำ: ${escapeHtml(item.suggestedProjectName)}</span>`;
+    } else {
+      tag = `<span class="tag nomatch">ไม่พบที่ตรงกัน — เลือกเอง</span>`;
+    }
+    const defaultAction = item.alreadyLinkedProjectId ? 'skip' : (item.suggestedProjectId ? 'link:' + item.suggestedProjectId : 'create');
+    const options = [
+      `<option value="skip">ข้าม (ไม่ทำอะไร)</option>`,
+      `<option value="create">สร้างโครงการใหม่จากข้อมูลนี้</option>`,
+      ...allProjects.map(p => `<option value="link:${p.id}">เชื่อมกับโครงการเดิม: ${escapeHtml(p.name)}</option>`),
+    ].join('');
+    return `
+      <div class="row" data-idx="${i}">
+        <div class="row-head">
+          <div>
+            <div class="pid">Planner #${escapeHtml(item.plannerId)} ${item.plannerType ? '· ' + escapeHtml(item.plannerType) : ''}</div>
+            <div class="pname">${escapeHtml(item.plannerName || '(ไม่มีชื่อ)')}</div>
+            ${item.plannerSite ? `<div class="psite">${escapeHtml(item.plannerSite)}</div>` : ''}
+            ${item.plannerPkg ? `<div class="psite">${escapeHtml(item.plannerPkg)}</div>` : ''}
+          </div>
+          ${tag}
+        </div>
+        <select data-action-for="${i}">${options}</select>
+      </div>`;
+  }).join('');
+
+  // set each select to its computed default
+  previewItems.forEach((item, i) => {
+    const sel = list.querySelector(`select[data-action-for="${i}"]`);
+    const def = item.alreadyLinkedProjectId ? 'skip' : (item.suggestedProjectId ? 'link:' + item.suggestedProjectId : 'create');
+    sel.value = def;
+  });
+}
+
+async function commitImport(){
+  const list = document.getElementById('list');
+  const items = previewItems.map((item, i) => {
+    const sel = list.querySelector(`select[data-action-for="${i}"]`);
+    const val = sel.value;
+    const base = { plannerId: item.plannerId, plannerName: item.plannerName, plannerSite: item.plannerSite };
+    if(val === 'skip') return { ...base, action: 'skip' };
+    if(val === 'create') return { ...base, action: 'create' };
+    return { ...base, action: 'link', projectId: val.slice(5) };
+  });
+
+  const btn = document.getElementById('commitBtn');
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  try{
+    const res = await fetch('/api/admin/planner-import-commit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+    const data = await res.json();
+    document.getElementById('summary').textContent = `เสร็จแล้ว — สร้างใหม่ ${data.created} รายการ, เชื่อมกับโครงการเดิม ${data.linked} รายการ, ข้าม ${data.skipped} รายการ`;
+    await loadPreview();
+  }catch(e){
+    document.getElementById('summary').textContent = 'บันทึกไม่สำเร็จ: ' + e.message;
+  }finally{
+    btn.disabled = false; btn.textContent = '✓ ยืนยันการนำเข้าตามที่เลือกไว้';
+  }
+}
+</script>
+</body>
+</html>

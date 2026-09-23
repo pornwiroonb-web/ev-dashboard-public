@@ -1,0 +1,16 @@
+{
+  "name": "Total Solutions - พอร์ทัลลูกค้า",
+  "short_name": "ลูกค้า Total Solutions",
+  "description": "ดูรายงานประจำวันและอนุมัติแผนก่อนวันเริ่มงานของผู้รับเหมา",
+  "start_url": "/client.html",
+  "scope": "/client.html",
+  "display": "standalone",
+  "background_color": "#070c13",
+  "theme_color": "#0a1420",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

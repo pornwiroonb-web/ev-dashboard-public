@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ระบบ ผรม. หน้างาน | Total Solutions</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest-contractor.json">
+<meta name="theme-color" content="#0a1420">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -240,6 +245,7 @@
         <div class="avatar" id="avaInit">-</div>
         <div class="id-text"><div class="name" id="idName">-</div><div class="co" id="idCompany">-</div></div>
       </div>
+      <div id="outboxBadge" style="display:none;align-items:center;gap:6px;background:rgba(248,113,113,.14);border:1px solid rgba(248,113,113,.35);color:#ffb3b3;font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:99px;margin-right:8px;">0</div>
       <button class="logout" onclick="doLogout()">ออกจากระบบ</button>
     </header>
 
@@ -440,6 +446,55 @@ async function api(path, opts){
   return data;
 }
 
+/* ================= PWA: install + offline outbox ================= */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+}
+
+const K_OUTBOX = "ts_contractor_outbox_v1";
+function getOutbox(){ try{return JSON.parse(localStorage.getItem(K_OUTBOX)||"[]");}catch(e){return [];} }
+function saveOutbox(items){ localStorage.setItem(K_OUTBOX, JSON.stringify(items)); }
+function queueOutbox(type, payload){
+  const items = getOutbox();
+  items.push({ id:'q_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), type, payload, queuedAt:new Date().toISOString() });
+  saveOutbox(items);
+  updateOutboxBadge();
+}
+function updateOutboxBadge(){
+  const n = getOutbox().length;
+  const badge = document.getElementById('outboxBadge');
+  if(!badge) return;
+  badge.style.display = n>0 ? 'flex' : 'none';
+  badge.textContent = n>0 ? `⏳ รอส่ง ${n} รายการ` : '';
+}
+let flushingOutbox = false;
+async function flushOutbox(){
+  if(flushingOutbox) return;
+  const items = getOutbox();
+  if(items.length === 0) return;
+  flushingOutbox = true;
+  const remaining = [];
+  let sent = 0;
+  for(const item of items){
+    try{
+      await api('/api/contractor/record', { method:'POST', body: JSON.stringify({ type:item.type, payload:item.payload }) });
+      sent += 1;
+    }catch(e){
+      remaining.push(item); // still offline or still failing — keep queued, try again later
+    }
+  }
+  saveOutbox(remaining);
+  updateOutboxBadge();
+  flushingOutbox = false;
+  if(sent > 0){
+    showToast(`ส่งข้อมูลที่ค้างไว้สำเร็จ ${sent} รายการ`);
+    const historyActive = document.querySelector('.tbtn[data-tab="history"]').classList.contains('active');
+    if(historyActive) renderHistory();
+  }
+}
+window.addEventListener('online', flushOutbox);
+setInterval(flushOutbox, 15000);
+
 /* ================= LOGIN / LOGOUT ================= */
 async function checkAuthOnLoad(){
   try{
@@ -508,6 +563,8 @@ async function enterApp(){
   buildChecklist();
   initSigPads();
   renderHistory();
+  updateOutboxBadge();
+  flushOutbox();
 }
 
 /* ================= TABS ================= */
@@ -644,19 +701,22 @@ function setBusy(btnId, busy, label){
 async function submitPlan(){
   if(!val('pScope')){ showToast("กรุณากรอกขอบเขตงานวันนี้", true); return; }
   setBusy('btnPlan', true);
+  const payload = {
+    reporter: currentName, company: currentCompany,
+    projectId: val('ctxProject'), project: getSelectedProjectName(), location: val('ctxLocation'),
+    date: val('pDate'), crew: val('pCrew'), start: val('pStart'), end: val('pEnd'),
+    supervisor: val('pSupervisor'), scope: val('pScope'), tools: val('pTools'),
+    risk: val('pRisk'), mitigation: val('pMitigation'),
+    signature: sigPads.sigPlan ? sigPads.sigPlan.dataURL() : ""
+  };
   try{
-    const payload = {
-      reporter: currentName, company: currentCompany,
-      projectId: val('ctxProject'), project: getSelectedProjectName(), location: val('ctxLocation'),
-      date: val('pDate'), crew: val('pCrew'), start: val('pStart'), end: val('pEnd'),
-      supervisor: val('pSupervisor'), scope: val('pScope'), tools: val('pTools'),
-      risk: val('pRisk'), mitigation: val('pMitigation'),
-      signature: sigPads.sigPlan ? sigPads.sigPlan.dataURL() : ""
-    };
     await api('/api/contractor/record', { method:'POST', body: JSON.stringify({ type:'plan', payload }) });
     resetForm('plan');
     showToast("ส่งแผนงานเพื่อขออนุมัติเข้างานแล้ว");
-  }catch(e){ showToast("บันทึกไม่สำเร็จ: " + e.message, true); }
+  }catch(e){
+    if(e.status === undefined){ queueOutbox('plan', payload); resetForm('plan'); showToast("ออฟไลน์ — บันทึกไว้ในเครื่อง จะส่งอัตโนมัติเมื่อเน็ตกลับมา"); }
+    else showToast("บันทึกไม่สำเร็จ: " + e.message, true);
+  }
   finally{ setBusy('btnPlan', false, 'ส่งขออนุมัติเข้างาน'); }
 }
 
@@ -671,36 +731,42 @@ async function submitChecklist(){
   const total = items.length;
   const passed = items.filter(i=>i.passed).length;
   setBusy('btnChecklist', true);
+  const payload = {
+    reporter: currentName, company: currentCompany,
+    projectId: val('ctxProject'), project: getSelectedProjectName(), location: val('ctxLocation'),
+    inspector: val('cInspector') || currentName,
+    items, total, passed, pct: total? Math.round(passed/total*100):0,
+    signature: sigPads.sigChecklist ? sigPads.sigChecklist.dataURL() : ""
+  };
   try{
-    const payload = {
-      reporter: currentName, company: currentCompany,
-      projectId: val('ctxProject'), project: getSelectedProjectName(), location: val('ctxLocation'),
-      inspector: val('cInspector') || currentName,
-      items, total, passed, pct: total? Math.round(passed/total*100):0,
-      signature: sigPads.sigChecklist ? sigPads.sigChecklist.dataURL() : ""
-    };
     const result = await api('/api/contractor/record', { method:'POST', body: JSON.stringify({ type:'checklist', payload }) });
     resetForm('checklist');
     showToast(`บันทึก Checklist แล้ว (${result.record.payload.pct}% ผ่าน)`);
-  }catch(e){ showToast("บันทึกไม่สำเร็จ: " + e.message, true); }
+  }catch(e){
+    if(e.status === undefined){ queueOutbox('checklist', payload); resetForm('checklist'); showToast("ออฟไลน์ — บันทึกไว้ในเครื่อง จะส่งอัตโนมัติเมื่อเน็ตกลับมา"); }
+    else showToast("บันทึกไม่สำเร็จ: " + e.message, true);
+  }
   finally{ setBusy('btnChecklist', false, 'บันทึก Checklist'); }
 }
 
 async function submitDiary(){
   if(!val('dWork')){ showToast("กรุณากรอกงานที่ดำเนินการ", true); return; }
   setBusy('btnDiary', true);
+  const payload = {
+    reporter: val('dReporter') || currentName, company: currentCompany,
+    projectId: val('ctxProject'), project: getSelectedProjectName(), location: val('ctxLocation'),
+    date: val('dDate'), start: val('dStart'), end: val('dEnd'),
+    work: val('dWork'), issue: val('dIssue'), next: val('dNext'),
+    status: getActiveStatus(), photos: photoStore.slice()
+  };
   try{
-    const payload = {
-      reporter: val('dReporter') || currentName, company: currentCompany,
-      projectId: val('ctxProject'), project: getSelectedProjectName(), location: val('ctxLocation'),
-      date: val('dDate'), start: val('dStart'), end: val('dEnd'),
-      work: val('dWork'), issue: val('dIssue'), next: val('dNext'),
-      status: getActiveStatus(), photos: photoStore.slice()
-    };
     await api('/api/contractor/record', { method:'POST', body: JSON.stringify({ type:'diary', payload }) });
     resetForm('diary');
     showToast("บันทึก Diary แล้ว");
-  }catch(e){ showToast("บันทึกไม่สำเร็จ: " + e.message, true); }
+  }catch(e){
+    if(e.status === undefined){ queueOutbox('diary', payload); resetForm('diary'); showToast("ออฟไลน์ — บันทึกไว้ในเครื่อง จะส่งอัตโนมัติเมื่อเน็ตกลับมา"); }
+    else showToast("บันทึกไม่สำเร็จ: " + e.message, true);
+  }
   finally{ setBusy('btnDiary', false, 'บันทึก Diary'); }
 }
 

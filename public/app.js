@@ -6,6 +6,10 @@ const state = {
   updatedAt: null,
 };
 
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+
 const elements = {
   authScreen: document.getElementById("auth-screen"),
   dashboardShell: document.getElementById("dashboard-shell"),

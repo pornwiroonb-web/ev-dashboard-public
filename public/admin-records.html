@@ -93,6 +93,7 @@
 </div>
 
 <script>
+if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{})); }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const TYPE_LABEL = { plan:"แผนก่อนวันเริ่มงาน", checklist:"Checklist ความปลอดภัย", diary:"Diary Report" };
 const STATUS_LABEL = { notstarted:"ยังไม่เริ่ม", doing:"กำลังดำเนินการ", done:"เสร็จตามแผน", issue:"ติดปัญหา/ล่าช้า" };

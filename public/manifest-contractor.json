@@ -1,0 +1,16 @@
+{
+  "name": "Total Solutions - ผรม. หน้างาน",
+  "short_name": "ผรม. Total Solutions",
+  "description": "บันทึกแผนก่อนวันเริ่มงาน, Checklist ความปลอดภัย และ Diary รายวัน",
+  "start_url": "/contractor.html",
+  "scope": "/contractor.html",
+  "display": "standalone",
+  "background_color": "#070c13",
+  "theme_color": "#0a1420",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -11,6 +11,11 @@
       rel="stylesheet"
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest-admin.json" />
+    <meta name="theme-color" content="#0a1420" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="stylesheet" href="/style.css" />
     <script type="module" src="/app.js"></script>
     <style>
@@ -335,12 +340,17 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V9m6 8V5M5 21h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/></svg>
       ภาพรวม ผรม./ลูกค้า
     </a>
+    <a href="/planner-import.html" class="report-fab" id="planner-import-fab" style="display:none;bottom:368px;background:#0d2b5c;color:#f2b705;border:1px solid rgba(242,183,5,.35);box-shadow:0 4px 20px rgba(13,43,92,0.4)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      นำเข้าจาก Planner
+    </a>
     <script>
       const fab=document.getElementById('report-fab');
       const plannerFab=document.getElementById('planner-fab');
       const contractorFab=document.getElementById('contractor-fab');
       const clientFab=document.getElementById('client-fab');
       const adminRecordsFab=document.getElementById('admin-records-fab');
+      const plannerImportFab=document.getElementById('planner-import-fab');
       const shell=document.getElementById('dashboard-shell');
       new MutationObserver(()=>{
         const show = !shell.classList.contains('hidden');
@@ -349,6 +359,7 @@
         contractorFab.style.display = show ? 'flex' : 'none';
         clientFab.style.display = show ? 'flex' : 'none';
         adminRecordsFab.style.display = show ? 'flex' : 'none';
+        plannerImportFab.style.display = show ? 'flex' : 'none';
       }).observe(shell,{attributes:true,attributeFilter:['class']});
     </script>
   </body>
