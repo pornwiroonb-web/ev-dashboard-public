@@ -50,6 +50,20 @@ const extraClientInviteCodes = parseJsonEnv("EV_CLIENT_INVITE_CODES")
     role: "client",
   }));
 
+// Give each contractor company their OWN invite code bound to just their
+// project too, via Railway -> Variables -> EV_CONTRACTOR_INVITE_CODES, same
+// JSON shape as EV_CLIENT_INVITE_CODES. A contractor code with no projectId
+// (including the default EV-CONTRACTOR-2026) still sees every project.
+const extraContractorInviteCodes = parseJsonEnv("EV_CONTRACTOR_INVITE_CODES")
+  .filter((item) => item && typeof item.code === "string" && item.code.trim())
+  .map((item) => ({
+    code: item.code.trim(),
+    projectId: typeof item.projectId === "string" ? item.projectId : null,
+    label: typeof item.label === "string" && item.label.trim() ? item.label.trim() : "ผรม.",
+    active: true,
+    role: "contractor",
+  }));
+
 const port = Number(process.env.PORT || 3000);
 
 const mimeTypes = new Map([
@@ -272,9 +286,9 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/contractor/projects") {
       const auth = getAuth(req);
       if (!auth) return unauthorized(res);
-      // A client bound to one project only ever sees that project here too —
-      // so the portal can show "your project" without revealing others exist.
-      if (auth.role === "client" && auth.projectId) {
+      // A client or contractor whose invite code is bound to one project only
+      // ever sees that project here — so the picker can't reveal others exist.
+      if ((auth.role === "client" || auth.role === "contractor") && auth.projectId) {
         const project = (state.projects || []).find((p) => p.id === auth.projectId);
         return sendJson(res, 200, { projects: project ? [{ id: project.id, name: project.name }] : [] });
       }
@@ -355,6 +369,15 @@ function normalizeState(input) {
   // ones, update label/projectId/active for ones that already exist by code,
   // never touch client codes NOT listed there (e.g. the default clientInviteCode).
   for (const extra of extraClientInviteCodes) {
+    const idx = normalized.inviteCodes.findIndex((item) => item.code === extra.code);
+    if (idx === -1) {
+      normalized.inviteCodes.push(extra);
+    } else {
+      normalized.inviteCodes[idx] = { ...normalized.inviteCodes[idx], ...extra };
+    }
+  }
+  // Same sync for project-scoped contractor codes (EV_CONTRACTOR_INVITE_CODES).
+  for (const extra of extraContractorInviteCodes) {
     const idx = normalized.inviteCodes.findIndex((item) => item.code === extra.code);
     if (idx === -1) {
       normalized.inviteCodes.push(extra);
@@ -602,6 +625,14 @@ async function createContractorRecord(auth, body) {
   }
 
   const payload = body?.payload && typeof body.payload === "object" ? { ...body.payload } : {};
+
+  // A contractor whose invite code is bound to one project can only ever
+  // log work against that project — override whatever the client sent.
+  if (auth.role === "contractor" && auth.projectId) {
+    const project = (state.projects || []).find((p) => p.id === auth.projectId);
+    payload.projectId = auth.projectId;
+    if (project) payload.project = project.name;
+  }
 
   // Plan (pre-start) records go through a client/admin approval step for site
   // entry. The approval state is always server-assigned so a contractor can
