@@ -64,6 +64,7 @@
       ดึงรายชื่อโครงการจาก Planner มาเทียบกับโครงการที่มีอยู่ในระบบนี้ — ระบบจะ<b>แนะนำ</b>การจับคู่ให้เฉพาะที่มั่นใจจริงๆ (ชื่อ/สถานที่ตรงกันชัดเจน) ส่วนอันที่ไม่มั่นใจจะให้เลือกเองทั้งหมด <b>ไม่มีอะไรถูกบันทึกจนกว่าจะกด "ยืนยันการนำเข้า" ด้านล่าง</b>
     </div>
     <button class="btn btn-primary" id="loadBtn" onclick="loadPreview()">ดึงข้อมูลจาก Planner</button>
+    <div id="fallbackNote" style="display:none;margin-top:14px;background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.35);color:#ffd873;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.6;"></div>
     <div id="list" style="margin-top:20px;"></div>
     <div id="commitArea" style="display:none;margin-top:10px;">
       <button class="btn btn-primary" id="commitBtn" onclick="commitImport()">✓ ยืนยันการนำเข้าตามที่เลือกไว้</button>
@@ -90,9 +91,17 @@ async function loadPreview(){
       const err = await previewRes.json().catch(()=>({}));
       throw new Error(err.error || 'โหลดไม่สำเร็จ');
     }
-    previewItems = (await previewRes.json()).items || [];
+    const data = await previewRes.json();
+    previewItems = data.items || [];
     allProjects = (await projRes.json()).projects || [];
     render();
+    const note = document.getElementById('fallbackNote');
+    if(data.usedFallback){
+      note.style.display = 'block';
+      note.textContent = '⚠ ยังไม่พบข้อมูล "projects" ที่บันทึกไว้ใน Google Sheet ของ Planner จริง — รายการด้านล่างเป็นชุดโครงการเริ่มต้นที่ Planner ผูกไว้ในตัวเอง (อาจไม่ตรงกับสถานะล่าสุดถ้ามีการแก้ไขใน Planner ไปแล้ว)';
+    } else {
+      note.style.display = 'none';
+    }
     document.getElementById('commitArea').style.display = previewItems.length ? 'block' : 'none';
   }catch(e){
     document.getElementById('list').innerHTML = `<div class="empty-state">โหลดไม่สำเร็จ: ${escapeHtml(e.message)}</div>`;
