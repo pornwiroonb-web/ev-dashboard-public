@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ภาพรวม ผรม./ลูกค้า | EleXa by EGAT</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="/auth-guard.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#070c13; --panel: rgba(15, 22, 32, 0.6); --panel-strong:#0f1a29;
+    --line: rgba(242, 183, 5, 0.16); --text:#eef3f9; --muted:#8296b0;
+    --accent:#f2b705; --accent-2:#f7c948; --accent-3:#34d399; --bad:#f87171;
+    --font-ui:'Noto Sans Thai', sans-serif; --font-display:'Space Grotesk','Noto Sans Thai', sans-serif;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    background: radial-gradient(circle at 15% 0%, rgba(242,183,5,.10), transparent 42%), radial-gradient(circle at 100% 20%, rgba(58,120,200,.10), transparent 38%), linear-gradient(180deg,#050a10 0%,#0a1420 55%,#0c1826 100%);
+    color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100%;
+  }
+  h1,h2,h3{font-family:var(--font-display);}
+  .shell{max-width:960px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;}
+  .stripe{height:2px;flex:none;background:linear-gradient(90deg,transparent,var(--accent) 30%,var(--accent-2) 50%,var(--accent) 70%,transparent);}
+  header.appbar{flex:none;padding:16px 24px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;backdrop-filter:blur(10px);}
+  header.appbar h1{font-size:18px;margin:0;}
+  header.appbar a{color:var(--muted);font-size:13px;text-decoration:none;}
+  header.appbar a:hover{color:var(--accent);}
+  main{flex:1;padding:22px 24px 60px;}
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+  .stat-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;}
+  .stat-card .n{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--accent);}
+  .stat-card .l{font-size:12px;color:var(--muted);margin-top:4px;}
+  .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;}
+  .filters select{background:var(--panel-strong);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13.5px;}
+  .chip{padding:8px 13px;border-radius:99px;border:1.5px solid var(--line);background:var(--panel-strong);font-size:13px;cursor:pointer;color:var(--muted);white-space:nowrap;}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#1a1200;font-weight:700;}
+  .rec-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
+  .rec-card:hover{border-color:var(--accent);}
+  .rec-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .rec-type{font-size:11px;font-weight:700;color:var(--accent);font-family:var(--font-display);letter-spacing:.02em;}
+  .rec-title{font-size:15px;font-weight:600;margin:3px 0;}
+  .rec-meta{font-size:12.5px;color:var(--muted);}
+  .badge{padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;flex:none;white-space:nowrap;}
+  .badge.doing{background:rgba(77,168,255,.18);color:#bfe2ff;}
+  .badge.done{background:rgba(52,211,153,.18);color:#a7f3d3;}
+  .badge.issue{background:rgba(248,113,113,.18);color:#ffd0d0;}
+  .badge.notstarted{background:rgba(130,150,176,.18);color:var(--text);}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;align-items:center;justify-content:center;padding:20px;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--panel-strong);width:100%;max-width:600px;max-height:85vh;overflow-y:auto;border-radius:20px;padding:22px;}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .modal-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;}
+  .detail-row{padding:10px 0;border-bottom:1px solid var(--line);}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-row .dk{font-size:11.5px;color:var(--muted);margin-bottom:3px;font-weight:600;}
+  .detail-row .dv{font-size:14.5px;line-height:1.55;white-space:pre-wrap;}
+  .detail-imgs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .detail-imgs img{width:72px;height:72px;object-fit:cover;border-radius:9px;border:1px solid var(--line);}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="stripe"></div>
+  <header class="appbar">
+    <h1>ภาพรวม ผรม. / ลูกค้า</h1>
+    <a href="/">← กลับแดชบอร์ดหลัก</a>
+  </header>
+  <main>
+    <div class="stats-row" id="statsRow"></div>
+    <div class="filters">
+      <select id="fProject"><option value="">ทุกโครงการ</option></select>
+      <div class="chip active" data-t="all">ทั้งหมด</div>
+      <div class="chip" data-t="plan">แผนงาน</div>
+      <div class="chip" data-t="checklist">Checklist</div>
+      <div class="chip" data-t="diary">Diary</div>
+    </div>
+    <div id="list"></div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modalTitle">รายละเอียด</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const TYPE_LABEL = { plan:"แผนก่อนวันเริ่มงาน", checklist:"Checklist ความปลอดภัย", diary:"Diary Report" };
+const STATUS_LABEL = { notstarted:"ยังไม่เริ่ม", doing:"กำลังดำเนินการ", done:"เสร็จตามแผน", issue:"ติดปัญหา/ล่าช้า" };
+const APPROVAL_LABEL = { pending:"รออนุมัติ", approved:"อนุมัติเข้างานแล้ว", rejected:"ไม่อนุมัติ" };
+const APPROVAL_BADGE_CLASS = { pending:"doing", approved:"done", rejected:"issue" };
+
+let allRecords = [];
+let projects = [];
+
+async function init(){
+  try{
+    const [recData, projData] = await Promise.all([
+      fetch('/api/contractor/records?type=all').then(r=>r.json()),
+      fetch('/api/contractor/projects').then(r=>r.json()),
+    ]);
+    allRecords = recData.records || [];
+    projects = projData.projects || [];
+  }catch(e){
+    document.getElementById('list').innerHTML = `<div class="empty-state">โหลดข้อมูลไม่สำเร็จ: ${e.message}</div>`;
+    return;
+  }
+  const sel = document.getElementById('fProject');
+  sel.innerHTML = '<option value="">ทุกโครงการ</option>' + projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  sel.addEventListener('change', render);
+  renderStats();
+  render();
+}
+
+function renderStats(){
+  const pending = allRecords.filter(r=>r.type==='plan' && (r.payload.approval||{}).status==='pending').length;
+  const today = new Date().toISOString().slice(0,10);
+  const diaryToday = allRecords.filter(r=>r.type==='diary' && r.createdAt.slice(0,10)===today).length;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="n">${allRecords.length}</div><div class="l">บันทึกทั้งหมด</div></div>
+    <div class="stat-card"><div class="n">${pending}</div><div class="l">แผนรออนุมัติ</div></div>
+    <div class="stat-card"><div class="n">${diaryToday}</div><div class="l">Diary วันนี้</div></div>
+    <div class="stat-card"><div class="n">${projects.length}</div><div class="l">โครงการทั้งหมด</div></div>
+  `;
+}
+
+document.querySelector('.filters').addEventListener('click', (e)=>{
+  const chip = e.target.closest('.chip');
+  if(!chip) return;
+  document.querySelectorAll('.filters .chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  render();
+});
+
+function render(){
+  const typeFilter = document.querySelector('.filters .chip.active').dataset.t;
+  const projectId = document.getElementById('fProject').value;
+  let rows = allRecords;
+  if(typeFilter !== 'all') rows = rows.filter(r=>r.type===typeFilter);
+  if(projectId) rows = rows.filter(r=>(r.payload||{}).projectId===projectId);
+  rows = rows.slice().sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
+
+  const list = document.getElementById('list');
+  if(rows.length===0){ list.innerHTML = `<div class="empty-state">ไม่มีข้อมูลตรงตามตัวกรอง</div>`; return; }
+
+  list.innerHTML = rows.map(r=>{
+    const p = r.payload||{};
+    const dt = new Date(r.createdAt);
+    const dtStr = dt.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + dt.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    let title='', badge='';
+    if(r.type==='plan'){ title = p.scope||'ไม่ระบุขอบเขตงาน'; const st=(p.approval||{}).status||'pending'; badge=`<span class="badge ${APPROVAL_BADGE_CLASS[st]}">${APPROVAL_LABEL[st]}</span>`; }
+    if(r.type==='checklist'){ title = `ผ่าน ${p.passed}/${p.total} รายการ`; badge=`<span class="badge ${p.pct===100?'done':(p.pct>=50?'doing':'issue')}">${p.pct}%</span>`; }
+    if(r.type==='diary'){ title = p.work||'ไม่ระบุ'; badge=`<span class="badge ${p.status||'notstarted'}">${STATUS_LABEL[p.status]||''}</span>`; }
+    return `<div class="rec-card" onclick='viewRecord("${r.id}")'>
+      <div class="rec-top">
+        <div>
+          <div class="rec-type">${TYPE_LABEL[r.type]}</div>
+          <div class="rec-title">${escapeHtml(title.slice(0,70))}</div>
+          <div class="rec-meta">${dtStr} · ${escapeHtml(p.reporter||p.inspector||'ไม่ระบุ')}${p.company?' ('+escapeHtml(p.company)+')':''} · ${escapeHtml(p.project||'ไม่ระบุโครงการ')}</div>
+        </div>
+        ${badge}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function viewRecord(id){
+  const r = allRecords.find(x=>x.id===id);
+  if(!r) return;
+  const p = r.payload||{};
+  document.getElementById('modalTitle').textContent = TYPE_LABEL[r.type];
+  let html = '';
+  const rowsMap = {
+    plan: [['วันที่',p.date],['โครงการ/สถานี',p.project],['สถานที่',p.location],['ผู้จัดทำ',p.reporter+(p.company?' · '+p.company:'')],['จำนวนผู้ปฏิบัติงาน',p.crew],['เวลา (แผน)',(p.start||'-')+' - '+(p.end||'-')],['หัวหน้าทีม/ผู้ควบคุมงาน',p.supervisor],['ขอบเขตงาน',p.scope],['เครื่องมือ/อุปกรณ์',p.tools],['ความเสี่ยงที่คาดว่าจะพบ',p.risk],['มาตรการป้องกัน',p.mitigation]],
+    checklist: [['โครงการ/สถานี',p.project],['สถานที่',p.location],['ผู้ตรวจสอบ',p.inspector],['ผลรวม',`ผ่าน ${p.passed}/${p.total} รายการ (${p.pct}%)`]],
+    diary: [['วันที่',p.date],['โครงการ/สถานี',p.project],['สถานที่',p.location],['ผู้รายงาน',p.reporter+(p.company?' · '+p.company:'')],['เวลา',(p.start||'-')+' - '+(p.end||'-')],['งานที่ดำเนินการ',p.work],['ปัญหา/อุปสรรค',p.issue],['แผนงานวันถัดไป',p.next],['สถานะ',STATUS_LABEL[p.status]]],
+  };
+  html += (rowsMap[r.type]||[]).filter(([k,v])=>v).map(([k,v])=>`<div class="detail-row"><div class="dk">${k}</div><div class="dv">${escapeHtml(String(v))}</div></div>`).join('');
+  if(r.type==='checklist' && Array.isArray(p.items)){
+    html += p.items.map(it=>`<div class="detail-row"><div class="dk">${it.category}</div><div class="dv">${it.passed?'✓ ผ่าน':'✗ ไม่ผ่าน'} — ${escapeHtml(it.item)}${it.note?' — '+escapeHtml(it.note):''}</div></div>`).join('');
+  }
+  if(r.type==='diary' && p.photos && p.photos.length){
+    html += `<div class="detail-row"><div class="dk">รูปภาพหน้างาน</div><div class="detail-imgs">${p.photos.map(src=>`<img src="${src}">`).join('')}</div></div>`;
+  }
+  if(r.type==='plan' && p.approval){
+    const st = p.approval.status||'pending';
+    const dt = p.approval.reviewedAt ? new Date(p.approval.reviewedAt).toLocaleString('th-TH') : '';
+    html += `<div class="detail-row"><div class="dk">สถานะการอนุมัติเข้างาน</div><div class="dv">${APPROVAL_LABEL[st]}${p.approval.reviewerName?' — โดย '+escapeHtml(p.approval.reviewerName):''}${dt?' ('+dt+')':''}${p.approval.note?'\\nหมายเหตุ: '+p.approval.note:''}</div></div>`;
+  }
+  if(p.signature){
+    html += `<div class="detail-row"><div class="dk">ลายเซ็น</div><img src="${p.signature}" style="max-width:220px;background:#fff;border-radius:8px;border:1px solid var(--line);margin-top:4px;"></div>`;
+  }
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
+
+init();
+</script>
+</body>
+</html>

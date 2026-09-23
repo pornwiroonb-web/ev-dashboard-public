@@ -348,6 +348,23 @@ textarea:focus {
   gap: 12px;
 }
 
+.checkbox-row {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  accent-color: #27e0c2;
+  cursor: pointer;
+}
+
 .range-value {
   color: var(--accent-2);
   font-weight: 800;

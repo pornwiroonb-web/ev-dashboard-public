@@ -49,6 +49,14 @@ const elements = {
   editProjectDue: document.getElementById("edit-project-due"),
   editProjectLocation: document.getElementById("edit-project-location"),
   editProjectOwner: document.getElementById("edit-project-owner"),
+  editProjectShowChecklist: document.getElementById("edit-project-show-checklist"),
+  inviteCodeForm: document.getElementById("invite-code-form"),
+  inviteCodeRole: document.getElementById("invite-code-role"),
+  inviteCodeProject: document.getElementById("invite-code-project"),
+  inviteCodeLabel: document.getElementById("invite-code-label"),
+  inviteCodeCustom: document.getElementById("invite-code-custom"),
+  inviteCodeMessage: document.getElementById("invite-code-message"),
+  inviteCodeList: document.getElementById("invite-code-list"),
   editProjectMessage: document.getElementById("edit-project-message"),
   logoutButton: document.getElementById("logout-button"),
 };
@@ -74,6 +82,7 @@ elements.openNewProject.addEventListener("click", () => toggleSection("new"));
 elements.cancelNewProject.addEventListener("click", () => toggleSection("none"));
 elements.newProjectForm.addEventListener("submit", createProject);
 elements.editProjectForm.addEventListener("submit", saveProjectEdits);
+elements.inviteCodeForm.addEventListener("submit", createInviteCodeSubmit);
 elements.authForm.addEventListener("submit", submitInviteCode);
 elements.logoutButton.addEventListener("click", logout);
 
@@ -95,6 +104,7 @@ async function bootstrap() {
     showDashboard();
     await loadState();
     connectLiveUpdates();
+    loadInviteCodes();
     return;
   }
 
@@ -346,6 +356,7 @@ function populateProjectEditor() {
   elements.editProjectDue.value = project.dueDate || "";
   elements.editProjectLocation.value = project.location || "";
   elements.editProjectOwner.value = project.owner || "";
+  elements.editProjectShowChecklist.checked = Boolean(project.showChecklistToClient);
 }
 
 function renderFeedItem(item) {
@@ -541,6 +552,7 @@ async function saveProjectEdits(event) {
     dueDate: elements.editProjectDue.value,
     location: elements.editProjectLocation.value.trim(),
     owner: elements.editProjectOwner.value.trim(),
+    showChecklistToClient: elements.editProjectShowChecklist.checked,
   };
 
   setFormBusy(elements.editProjectForm, true);
@@ -580,5 +592,131 @@ function setFormBusy(form, isBusy, message = "") {
   });
   if (message && form === elements.reportForm) {
     elements.formMessage.textContent = message;
+  }
+}
+
+/* ================= INVITE CODE MANAGER (ผรม. / ลูกค้า) ================= */
+let inviteCodesCache = [];
+let inviteProjectsCache = [];
+
+async function loadInviteCodes() {
+  try {
+    const response = await fetch("/api/admin/invite-codes");
+    if (!response.ok) return;
+    const data = await response.json();
+    inviteCodesCache = data.inviteCodes || [];
+    inviteProjectsCache = data.projects || [];
+    renderInviteProjectOptions();
+    renderInviteCodeList();
+  } catch (error) {
+    // Silent: this card is a convenience, not core dashboard functionality.
+  }
+}
+
+function renderInviteProjectOptions() {
+  const current = elements.inviteCodeProject.value;
+  elements.inviteCodeProject.innerHTML = inviteProjectsCache
+    .map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`)
+    .join("");
+  if (inviteProjectsCache.some((p) => p.id === current)) {
+    elements.inviteCodeProject.value = current;
+  }
+}
+
+function renderInviteCodeList() {
+  const rows = inviteCodesCache.filter((c) => c.role === "contractor" || c.role === "client");
+  if (rows.length === 0) {
+    elements.inviteCodeList.innerHTML = `<p style="color:rgba(255,255,255,.55);font-size:13.5px;">ยังไม่มีรหัส ผรม./ลูกค้า ที่สร้างไว้</p>`;
+    return;
+  }
+  elements.inviteCodeList.innerHTML = rows
+    .map((c) => {
+      const project = inviteProjectsCache.find((p) => p.id === c.projectId);
+      const scopeLabel = c.projectId
+        ? (project ? escapeHtml(project.name) : `<span style="color:#ff7f9d;">⚠ โครงการนี้ถูกลบ/ไม่พบแล้ว</span>`)
+        : `<span style="color:rgba(255,255,255,.5);">ไม่ผูกโครงการ (เห็นทุกโครงการ)</span>`;
+      const roleLabel = c.role === "client" ? "ลูกค้า" : "ผรม.";
+      return `
+        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="min-width:0;">
+            <div style="font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:14px;">
+              ${escapeHtml(c.code)}
+              <span style="font-weight:500;font-size:11.5px;color:rgba(255,255,255,.5);margin-left:6px;">${roleLabel}${c.active ? "" : " · ปิดใช้งาน"}</span>
+            </div>
+            <div style="font-size:12.5px;color:rgba(255,255,255,.6);margin-top:2px;">${escapeHtml(c.label || "")}</div>
+            <div style="font-size:12px;margin-top:2px;">${scopeLabel}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex:none;">
+            <button type="button" class="ghost" data-toggle-code="${escapeHtml(c.code)}" data-active="${c.active}">${c.active ? "ปิดใช้งาน" : "เปิดใช้งาน"}</button>
+            <button type="button" class="ghost" data-delete-code="${escapeHtml(c.code)}" style="color:#ff7f9d;">ลบ</button>
+          </div>
+        </div>`;
+    })
+    .join("");
+}
+
+elements.inviteCodeList.addEventListener("click", async (event) => {
+  const toggleBtn = event.target.closest("[data-toggle-code]");
+  const deleteBtn = event.target.closest("[data-delete-code]");
+  if (toggleBtn) {
+    const code = toggleBtn.getAttribute("data-toggle-code");
+    const nextActive = toggleBtn.getAttribute("data-active") !== "true";
+    toggleBtn.disabled = true;
+    try {
+      await fetch(`/api/admin/invite-codes/${encodeURIComponent(code)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: nextActive }),
+      });
+      await loadInviteCodes();
+    } catch (error) {
+      toggleBtn.disabled = false;
+    }
+    return;
+  }
+  if (deleteBtn) {
+    const code = deleteBtn.getAttribute("data-delete-code");
+    if (!window.confirm(`ลบรหัส "${code}" ใช่ไหม? ผรม./ลูกค้าที่ถือรหัสนี้จะเข้าระบบไม่ได้อีก`)) return;
+    deleteBtn.disabled = true;
+    try {
+      const response = await fetch(`/api/admin/invite-codes/${encodeURIComponent(code)}`, { method: "DELETE" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        window.alert(data.error || "ลบไม่สำเร็จ");
+      }
+      await loadInviteCodes();
+    } catch (error) {
+      deleteBtn.disabled = false;
+    }
+  }
+});
+
+async function createInviteCodeSubmit(event) {
+  event.preventDefault();
+  elements.inviteCodeMessage.textContent = "";
+  const payload = {
+    role: elements.inviteCodeRole.value,
+    projectId: elements.inviteCodeProject.value || null,
+    label: elements.inviteCodeLabel.value.trim(),
+    code: elements.inviteCodeCustom.value.trim(),
+  };
+
+  setFormBusy(elements.inviteCodeForm, true);
+  try {
+    const response = await fetch("/api/admin/invite-codes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "สร้างรหัสไม่สำเร็จ");
+    elements.inviteCodeMessage.textContent = `สร้างรหัส "${data.inviteCode.code}" เรียบร้อย`;
+    elements.inviteCodeLabel.value = "";
+    elements.inviteCodeCustom.value = "";
+    await loadInviteCodes();
+  } catch (error) {
+    elements.inviteCodeMessage.textContent = error?.message || "เกิดข้อผิดพลาด";
+  } finally {
+    setFormBusy(elements.inviteCodeForm, false);
   }
 }

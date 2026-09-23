@@ -869,6 +869,14 @@ async function exportAll(){
 }
 
 /* ================= INIT ================= */
+/* ================= LIGHT AUTO-REFRESH ================= */
+setInterval(() => {
+  if (document.visibilityState !== 'visible') return;
+  if (document.getElementById('app').style.display === 'none') return;
+  const historyActive = document.querySelector('.tbtn[data-tab="history"]').classList.contains('active');
+  if (historyActive) renderHistory();
+}, 20000);
+
 checkAuthOnLoad();
 </script>
 </body>

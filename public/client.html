@@ -435,6 +435,15 @@ async function reviewPlan(id, status){
 
 function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
 
+/* ================= LIGHT AUTO-REFRESH ================= */
+setInterval(() => {
+  if (document.visibilityState !== 'visible') return;
+  if (document.getElementById('app').style.display === 'none') return;
+  const diaryActive = document.querySelector('.tbtn[data-tab="diary"]').classList.contains('active');
+  if (diaryActive) renderDiary();
+  renderApprovals(); // also keeps the pending-count badge fresh when off-tab
+}, 20000);
+
 checkAuthOnLoad();
 </script>
 </body>
