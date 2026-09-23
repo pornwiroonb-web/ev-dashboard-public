@@ -97,6 +97,16 @@ const port = Number(process.env.PORT || 3000);
 const plannerAppsScriptUrl = process.env.EV_PLANNER_URL
   || "https://script.google.com/macros/s/AKfycbxtpf9aNev-BTCPj2WckvLukuZJHlrBnmOFnvo7O2mS_5wQpsKzfYA1pmbGX_cAJ8nq6A/exec";
 
+// LINE Messaging API — set via Railway -> Variables -> LINE_CHANNEL_ACCESS_TOKEN
+// and LINE_CHANNEL_SECRET. Notifications are silently skipped (no crash) when
+// these aren't configured, so the rest of the app works fine without them.
+const lineChannelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN || "";
+const lineChannelSecret = process.env.LINE_CHANNEL_SECRET || "";
+const lineApiBase = "https://api.line.me/v2/bot/message";
+// In dev/test, override where push/reply calls go (real api.line.me is
+// unreachable from this sandbox) — never set in production.
+const lineApiOverrideBase = process.env.LINE_API_BASE_OVERRIDE || "";
+
 const mimeTypes = new Map([
   [".html", "text/html; charset=utf-8"],
   [".css", "text/css; charset=utf-8"],
@@ -224,6 +234,26 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
 
   try {
+    if (req.method === "POST" && url.pathname === "/api/line/webhook") {
+      const raw = await readRawBody(req);
+      const signature = req.headers["x-line-signature"];
+      if (!verifyLineSignature(raw, signature)) {
+        res.writeHead(401);
+        return res.end();
+      }
+      let body;
+      try {
+        body = JSON.parse(raw.toString("utf8"));
+      } catch {
+        body = { events: [] };
+      }
+      for (const event of body.events || []) {
+        handleLineEvent(event).catch((error) => console.error("LINE event error:", error.message));
+      }
+      res.writeHead(200, { "Content-Type": "text/plain" });
+      return res.end("OK");
+    }
+
     if (req.method === "POST" && url.pathname === "/api/auth/invite") {
       const body = await readJson(req);
       return handleInviteLogin(req, res, body);
@@ -759,6 +789,9 @@ async function createContractorRecord(auth, body) {
   state.contractorRecords = state.contractorRecords.slice(0, 3000);
   await saveState();
   broadcast({ type: "contractor-record-added", recordType: type });
+  if (type === "plan") {
+    notifyClientsOfNewPlan(payload).catch((error) => console.error("LINE notify (new plan) failed:", error.message));
+  }
   return { ok: true, record };
 }
 
@@ -1039,6 +1072,7 @@ async function reviewPlanRecord(auth, id, body) {
   };
   await saveState();
   broadcast({ type: "plan-reviewed", id, status });
+  notifyContractorOfReview(record).catch((error) => console.error("LINE notify (review) failed:", error.message));
   return { ok: true, record };
 }
 
@@ -1208,9 +1242,116 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
-async function readJson(req) {
+async function readRawBody(req) {
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
-  const text = Buffer.concat(chunks).toString("utf8");
+  return Buffer.concat(chunks);
+}
+
+async function readJson(req) {
+  const raw = await readRawBody(req);
+  const text = raw.toString("utf8");
   return text ? JSON.parse(text) : {};
 }
+
+// ---- LINE Messaging API ----
+function lineApiUrl(path) {
+  return `${lineApiOverrideBase || lineApiBase}${path}`;
+}
+
+function verifyLineSignature(rawBody, signatureHeader) {
+  if (!lineChannelSecret || !signatureHeader) return false;
+  const expected = createHmac("sha256", lineChannelSecret).update(rawBody).digest("base64");
+  try {
+    return timingSafeEqual(Buffer.from(expected), Buffer.from(signatureHeader));
+  } catch {
+    return false;
+  }
+}
+
+async function lineApiCall(path, body) {
+  if (!lineChannelAccessToken) return; // not configured — no-op
+  try {
+    await fetch(lineApiUrl(path), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${lineChannelAccessToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    console.error("LINE API call failed:", error.message);
+  }
+}
+
+async function lineReply(replyToken, text) {
+  return lineApiCall("/reply", { replyToken, messages: [{ type: "text", text }] });
+}
+
+async function linePush(userId, text) {
+  return lineApiCall("/push", { to: userId, messages: [{ type: "text", text }] });
+}
+
+// A ผรม./ลูกค้า links their LINE account by adding the OA as a friend and
+// sending their invite code as a plain chat message once. No LINE Login/
+// OAuth needed — this is the whole "linking" mechanism.
+async function handleLineEvent(event) {
+  if (!event || event.type !== "message" || !event.message || event.message.type !== "text") return;
+  const userId = event.source && event.source.userId;
+  if (!userId) return;
+  const code = String(event.message.text || "").trim().toUpperCase();
+
+  const invite = (state.inviteCodes || []).find(
+    (c) => c.code.toUpperCase() === code && (c.role === "client" || c.role === "contractor")
+  );
+  if (!invite) {
+    if (event.replyToken) {
+      await lineReply(event.replyToken, "ไม่พบรหัสเชิญนี้ในระบบ กรุณาตรวจสอบแล้วพิมพ์รหัสของคุณอีกครั้ง (ตัวพิมพ์เล็ก/ใหญ่ไม่เป็นไร)");
+    }
+    return;
+  }
+
+  invite.lineUserId = userId;
+  await saveState();
+
+  if (event.replyToken) {
+    const roleLabel = invite.role === "client" ? "ลูกค้า" : "ผรม.";
+    await lineReply(
+      event.replyToken,
+      `เชื่อมบัญชี LINE กับรหัส "${invite.code}" (${roleLabel}) สำเร็จแล้ว ✅\nจะแจ้งเตือนอัตโนมัติเมื่อมีความเคลื่อนไหวที่เกี่ยวข้องกับคุณ`
+    );
+  }
+}
+
+async function notifyClientsOfNewPlan(payload) {
+  const targets = (state.inviteCodes || []).filter(
+    (c) => c.role === "client" && c.active && c.lineUserId && (!c.projectId || c.projectId === payload.projectId)
+  );
+  if (targets.length === 0) return;
+  const text = [
+    "🔔 มีแผนก่อนวันเริ่มงานใหม่รออนุมัติ",
+    `โครงการ: ${payload.project || "-"}`,
+    `ผู้ส่ง: ${payload.reporter || "-"}${payload.company ? " (" + payload.company + ")" : ""}`,
+    `ขอบเขตงาน: ${String(payload.scope || "-").slice(0, 100)}`,
+    "",
+    "เข้าไปอนุมัติได้ที่หน้าพอร์ทัลลูกค้า",
+  ].join("\n");
+  await Promise.allSettled(targets.map((t) => linePush(t.lineUserId, text)));
+}
+
+async function notifyContractorOfReview(record) {
+  const owner = (state.inviteCodes || []).find((c) => c.code === record.ownerCode);
+  if (!owner || !owner.lineUserId) return;
+  const approval = record.payload.approval || {};
+  const label = approval.status === "approved" ? "✅ อนุมัติเข้างานแล้ว" : "❌ ไม่อนุมัติ";
+  const text = [
+    "🔔 ผลการพิจารณาแผนก่อนวันเริ่มงานของคุณ",
+    `ขอบเขตงาน: ${String(record.payload.scope || "-").slice(0, 100)}`,
+    `ผลการพิจารณา: ${label}`,
+    approval.reviewerName ? `โดย: ${approval.reviewerName}` : "",
+    approval.note ? `หมายเหตุ: ${approval.note}` : "",
+  ].filter(Boolean).join("\n");
+  await linePush(owner.lineUserId, text);
+}
+
