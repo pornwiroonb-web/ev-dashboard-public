@@ -28,7 +28,6 @@ const clientInviteCode = process.env.EV_CLIENT_INVITE_CODE || "EV-CLIENT-2026";
 // Give each real client their OWN invite code bound to just their project,
 // via Railway -> Variables -> EV_CLIENT_INVITE_CODES, a JSON array like:
 // [{"code":"EV-CLIENT-CENTRALPLAZA","projectId":"ev-station-001","label":"ลูกค้า Central Plaza"}]
-// projectId must match an id in the Projects list (see GET /api/contractor/projects).
 function parseJsonEnv(name) {
   const raw = process.env[name];
   if (!raw) return [];
@@ -40,11 +39,17 @@ function parseJsonEnv(name) {
     return [];
   }
 }
+// projectId must match an id in the Projects list (see GET /api/contractor/projects).
+// Instead of hunting for that id, you can set "project" to (part of) the
+// project's NAME instead — it gets matched against the real project list
+// on every load (see resolveProjectId below). Example:
+// [{"code":"EV-CLIENT-TAITAAN","project":"TAITAAN","label":"ลูกค้า Taitaan"}]
 const extraClientInviteCodes = parseJsonEnv("EV_CLIENT_INVITE_CODES")
   .filter((item) => item && typeof item.code === "string" && item.code.trim())
   .map((item) => ({
     code: item.code.trim(),
     projectId: typeof item.projectId === "string" ? item.projectId : null,
+    project: typeof item.project === "string" && item.project.trim() ? item.project.trim() : null,
     label: typeof item.label === "string" && item.label.trim() ? item.label.trim() : "ลูกค้า",
     active: true,
     role: "client",
@@ -52,17 +57,34 @@ const extraClientInviteCodes = parseJsonEnv("EV_CLIENT_INVITE_CODES")
 
 // Give each contractor company their OWN invite code bound to just their
 // project too, via Railway -> Variables -> EV_CONTRACTOR_INVITE_CODES, same
-// JSON shape as EV_CLIENT_INVITE_CODES. A contractor code with no projectId
-// (including the default EV-CONTRACTOR-2026) still sees every project.
+// JSON shape as EV_CLIENT_INVITE_CODES (projectId OR project name — see
+// above). A contractor code with no projectId/project (including the
+// default EV-CONTRACTOR-2026) still sees every project.
 const extraContractorInviteCodes = parseJsonEnv("EV_CONTRACTOR_INVITE_CODES")
   .filter((item) => item && typeof item.code === "string" && item.code.trim())
   .map((item) => ({
     code: item.code.trim(),
     projectId: typeof item.projectId === "string" ? item.projectId : null,
+    project: typeof item.project === "string" && item.project.trim() ? item.project.trim() : null,
     label: typeof item.label === "string" && item.label.trim() ? item.label.trim() : "ผรม.",
     active: true,
     role: "contractor",
   }));
+
+// Resolves a typed project name against the real project list: exact
+// (case-insensitive) match wins; otherwise, if the name appears inside
+// exactly one project's full name (e.g. "TAITAAN" inside "...พร้อมติดตั้ง
+// (TAITAAN)"), that one is used. Zero or multiple matches fail closed (the
+// invite code ends up scoped to a project that doesn't exist, so it sees
+// nothing, rather than silently falling back to "sees everything").
+function resolveProjectId(name, projects) {
+  const needle = String(name || "").trim().toLowerCase();
+  if (!needle) return null;
+  const exact = projects.find((p) => String(p.name || "").trim().toLowerCase() === needle);
+  if (exact) return exact.id;
+  const contains = projects.filter((p) => String(p.name || "").toLowerCase().includes(needle));
+  return contains.length === 1 ? contains[0].id : null;
+}
 
 const port = Number(process.env.PORT || 3000);
 
@@ -337,6 +359,7 @@ async function loadState() {
 
 function normalizeState(input) {
   const normalized = input && typeof input === "object" ? input : {};
+  normalized.projects = Array.isArray(normalized.projects) ? normalized.projects : structuredClone(defaultState.projects);
   normalized.inviteCodes = Array.isArray(normalized.inviteCodes) && normalized.inviteCodes.length
     ? normalized.inviteCodes
     : structuredClone(defaultState.inviteCodes);
@@ -386,7 +409,20 @@ function normalizeState(input) {
     }
   }
 
-  normalized.projects = Array.isArray(normalized.projects) ? normalized.projects : structuredClone(defaultState.projects);
+  // Resolve any client/contractor code configured with a project NAME
+  // (instead of a raw id) against the real project list. Re-resolved on
+  // every load, so renaming a project in the dashboard doesn't break codes
+  // that were matched by name earlier. A name that no longer matches
+  // anything resolves to a sentinel that matches no real project (fail
+  // closed: that code sees nothing until the name/id is fixed).
+  normalized.inviteCodes = normalized.inviteCodes.map((item) => {
+    if ((item.role === "client" || item.role === "contractor") && !item.projectId && item.project) {
+      const resolved = resolveProjectId(item.project, normalized.projects);
+      return { ...item, projectId: resolved || `unresolved:${item.project}` };
+    }
+    return item;
+  });
+
   normalized.activity = Array.isArray(normalized.activity) ? normalized.activity : [];
   normalized.contractorRecords = Array.isArray(normalized.contractorRecords) ? normalized.contractorRecords : [];
   normalized.updatedAt = normalized.updatedAt || new Date().toISOString();
