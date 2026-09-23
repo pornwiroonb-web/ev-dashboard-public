@@ -640,6 +640,9 @@ function renderInviteCodeList() {
         ? (project ? escapeHtml(project.name) : `<span style="color:#ff7f9d;">⚠ โครงการนี้ถูกลบ/ไม่พบแล้ว</span>`)
         : `<span style="color:rgba(255,255,255,.5);">ไม่ผูกโครงการ (เห็นทุกโครงการ)</span>`;
       const roleLabel = c.role === "client" ? "ลูกค้า" : "ผรม.";
+      const lineLabel = c.lineUserId
+        ? `<span style="color:#34d399;">🟢 เชื่อม LINE แล้ว</span>`
+        : `<span style="color:rgba(255,255,255,.4);">⚪ ยังไม่เชื่อม LINE</span>`;
       return `
         <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
           <div style="min-width:0;">
@@ -649,6 +652,7 @@ function renderInviteCodeList() {
             </div>
             <div style="font-size:12.5px;color:rgba(255,255,255,.6);margin-top:2px;">${escapeHtml(c.label || "")}</div>
             <div style="font-size:12px;margin-top:2px;">${scopeLabel}</div>
+            <div style="font-size:11.5px;margin-top:4px;">${lineLabel}</div>
           </div>
           <div style="display:flex;gap:8px;flex:none;">
             <button type="button" class="ghost" data-toggle-code="${escapeHtml(c.code)}" data-active="${c.active}">${c.active ? "ปิดใช้งาน" : "เปิดใช้งาน"}</button>
