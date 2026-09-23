@@ -21,7 +21,34 @@ const authMaxAgeSeconds = 60 * 60 * 24 * 30;
 const contractorInviteCode = process.env.EV_CONTRACTOR_INVITE_CODE || "EV-CONTRACTOR-2026";
 // Invite code handed out to the client / project owner (ลูกค้า) — read-only
 // diary reports + plan approvals only. Change via EV_CLIENT_INVITE_CODE.
+// This single default code is UNSCOPED (sees every project) — keep it for
+// EGAT's own internal reviewers, not for an actual outside client.
 const clientInviteCode = process.env.EV_CLIENT_INVITE_CODE || "EV-CLIENT-2026";
+
+// Give each real client their OWN invite code bound to just their project,
+// via Railway -> Variables -> EV_CLIENT_INVITE_CODES, a JSON array like:
+// [{"code":"EV-CLIENT-CENTRALPLAZA","projectId":"ev-station-001","label":"ลูกค้า Central Plaza"}]
+// projectId must match an id in the Projects list (see GET /api/contractor/projects).
+function parseJsonEnv(name) {
+  const raw = process.env[name];
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    console.error(`Invalid JSON in ${name}, ignoring it`);
+    return [];
+  }
+}
+const extraClientInviteCodes = parseJsonEnv("EV_CLIENT_INVITE_CODES")
+  .filter((item) => item && typeof item.code === "string" && item.code.trim())
+  .map((item) => ({
+    code: item.code.trim(),
+    projectId: typeof item.projectId === "string" ? item.projectId : null,
+    label: typeof item.label === "string" && item.label.trim() ? item.label.trim() : "ลูกค้า",
+    active: true,
+    role: "client",
+  }));
 
 const port = Number(process.env.PORT || 3000);
 
@@ -242,6 +269,18 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { records });
     }
 
+    if (req.method === "GET" && url.pathname === "/api/contractor/projects") {
+      const auth = getAuth(req);
+      if (!auth) return unauthorized(res);
+      // A client bound to one project only ever sees that project here too —
+      // so the portal can show "your project" without revealing others exist.
+      if (auth.role === "client" && auth.projectId) {
+        const project = (state.projects || []).find((p) => p.id === auth.projectId);
+        return sendJson(res, 200, { projects: project ? [{ id: project.id, name: project.name }] : [] });
+      }
+      return sendJson(res, 200, { projects: getProjectList() });
+    }
+
     if (req.method === "DELETE" && url.pathname.startsWith("/api/contractor/record/")) {
       const auth = getAuth(req);
       if (!auth) return unauthorized(res);
@@ -276,8 +315,9 @@ async function loadState() {
     return normalizeState(JSON.parse(raw));
   } catch {
     await fs.mkdir(dataDir, { recursive: true });
-    await fs.writeFile(stateFile, JSON.stringify(defaultState, null, 2), "utf8");
-    return structuredClone(defaultState);
+    const initial = normalizeState(structuredClone(defaultState));
+    await fs.writeFile(stateFile, JSON.stringify(initial, null, 2), "utf8");
+    return initial;
   }
 }
 
@@ -310,6 +350,17 @@ function normalizeState(input) {
       active: true,
       role: "client",
     });
+  }
+  // Sync the project-scoped client codes from EV_CLIENT_INVITE_CODES: add new
+  // ones, update label/projectId/active for ones that already exist by code,
+  // never touch client codes NOT listed there (e.g. the default clientInviteCode).
+  for (const extra of extraClientInviteCodes) {
+    const idx = normalized.inviteCodes.findIndex((item) => item.code === extra.code);
+    if (idx === -1) {
+      normalized.inviteCodes.push(extra);
+    } else {
+      normalized.inviteCodes[idx] = { ...normalized.inviteCodes[idx], ...extra };
+    }
   }
 
   normalized.projects = Array.isArray(normalized.projects) ? normalized.projects : structuredClone(defaultState.projects);
@@ -345,6 +396,7 @@ function getAuthStatus(req) {
     authenticated: Boolean(auth),
     inviteCode: auth?.code || null,
     role: auth?.role || null,
+    projectId: auth?.projectId || null,
   };
 }
 
@@ -360,7 +412,11 @@ function isAuthenticated(req) {
 function getAuth(req) {
   const auth = verifyAuthCookie(getCookies(req)[authCookieName]);
   if (!auth) return null;
-  return { ...auth, role: auth.role === "contractor" || auth.role === "client" ? auth.role : "admin" };
+  return {
+    ...auth,
+    role: auth.role === "contractor" || auth.role === "client" ? auth.role : "admin",
+    projectId: typeof auth.projectId === "string" ? auth.projectId : null,
+  };
 }
 
 // Gate for admin-only endpoints (dashboard, planner, project management).
@@ -427,12 +483,13 @@ function getCookies(req) {
   );
 }
 
-function buildAuthCookie(code, role) {
+function buildAuthCookie(code, role, projectId) {
   const safeRole = role === "contractor" || role === "client" ? role : "admin";
   const payload = Buffer.from(
     JSON.stringify({
       code,
       role: safeRole,
+      projectId: typeof projectId === "string" ? projectId : null,
       exp: Date.now() + authMaxAgeSeconds * 1000,
     }),
     "utf8",
@@ -461,11 +518,12 @@ function handleInviteLogin(req, res, body) {
   }
 
   const role = invite.role === "contractor" || invite.role === "client" ? invite.role : "admin";
+  const projectId = typeof invite.projectId === "string" ? invite.projectId : null;
   res.writeHead(200, {
     "Content-Type": "application/json; charset=utf-8",
-    "Set-Cookie": buildAuthCookie(code, role),
+    "Set-Cookie": buildAuthCookie(code, role, projectId),
   });
-  res.end(JSON.stringify({ ok: true, inviteCode: code, role }));
+  res.end(JSON.stringify({ ok: true, inviteCode: code, role, projectId }));
 }
 
 function handleLogout(res) {
@@ -595,12 +653,31 @@ function listContractorRecords(auth, type) {
     // approval) — never the internal safety checklist, and across every
     // contractor on the project, not just their own submissions.
     records = records.filter((r) => r.type === "diary" || r.type === "plan");
+    // A client whose invite code is bound to one project (EV_CLIENT_INVITE_CODES)
+    // only ever sees that project's records — never another client's work.
+    // The unscoped default client code (no projectId) keeps seeing everything,
+    // for EGAT's own internal reviewers.
+    if (auth.projectId) {
+      const project = (state.projects || []).find((p) => p.id === auth.projectId);
+      const projectName = project ? project.name : null;
+      records = records.filter((r) => {
+        const p = r.payload || {};
+        if (p.projectId) return p.projectId === auth.projectId;
+        // Back-compat for records saved before contractors picked a project
+        // from the list: match by the free-text project name they typed.
+        return projectName && typeof p.project === "string" && p.project.trim() === projectName;
+      });
+    }
   }
   // admin: no filtering, sees every record from every contractor.
   if (type && type !== "all") {
     records = records.filter((r) => r.type === type);
   }
   return records;
+}
+
+function getProjectList() {
+  return (state.projects || []).map((p) => ({ id: p.id, name: p.name }));
 }
 
 async function reviewPlanRecord(auth, id, body) {
