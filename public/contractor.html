@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบ ผรม. หน้างาน | EleXa by EGAT</title>
+<title>ระบบ ผรม. หน้างาน | Total Solutions</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -206,7 +206,7 @@
   <div id="gate">
     <div class="brand-row">
       <div class="bolt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></div>
-      <div class="brand-text"><div class="k1">EleXa by EGAT</div><div class="k2">ระบบหน้างานสำหรับ ผรม.</div></div>
+      <div class="brand-text"><div class="k1">Total Solutions</div><div class="k2">ระบบหน้างานสำหรับ ผรม.</div></div>
     </div>
     <h1>เข้าสู่ระบบผู้รับเหมา</h1>
     <p class="sub">กรอกรหัสเชิญที่ได้รับจากทีม EGAT เพื่อบันทึกแผนก่อนวันเริ่มงาน, Checklist ความปลอดภัย และ Diary รายวัน — หน้านี้แยกจากแดชบอร์ดผู้บริหาร ผรม. จะเห็นเฉพาะข้อมูลที่ตนเองบันทึก</p>
@@ -243,7 +243,7 @@
       <button class="logout" onclick="doLogout()">ออกจากระบบ</button>
     </header>
 
-    <div class="banner"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><span>ข้อมูลเชื่อมต่อฐานข้อมูลกลางของ EleXa — <b>ผรม. เห็นได้เฉพาะข้อมูลของทีมตัวเอง</b> เท่านั้น</span></div>
+    <div class="banner"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><span>ข้อมูลเชื่อมต่อฐานข้อมูลกลางของ Total Solutions — <b>ผรม. เห็นได้เฉพาะข้อมูลของทีมตัวเอง</b> เท่านั้น</span></div>
 
     <div class="context-bar">
       <div class="field"><label>โครงการ / สถานี</label><select id="ctxProject" onchange="saveIdentity()"><option value="">กำลังโหลดโครงการ...</option></select></div>
@@ -848,7 +848,7 @@ function printRecordFromModal(){
   const dt = new Date(r.createdAt).toLocaleString('th-TH');
   const area = document.getElementById('printArea');
   area.innerHTML = `
-    <h2 style="font-family:sans-serif;">EleXa by EGAT — ${TYPE_LABEL[r.type]}</h2>
+    <h2 style="font-family:sans-serif;">Total Solutions — ${TYPE_LABEL[r.type]}</h2>
     <p style="color:#555;">บันทึกเมื่อ ${dt}</p>
     <div style="font-family:sans-serif;font-size:14px;line-height:1.7;">${buildDetailHtml(r).replace(/class="dk"/g,'style="font-weight:700;color:#333;margin-top:8px;"').replace(/class="dv"/g,'style="white-space:pre-wrap;"')}</div>
   `;
