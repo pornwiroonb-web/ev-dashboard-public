@@ -255,7 +255,9 @@ async function loadScopedProject(){
   try{
     const data = await api('/api/contractor/projects');
     const projects = data.projects || [];
-    el.textContent = projects.length === 1 ? projects[0].name : 'ลูกค้า / เจ้าของโครงการ';
+    if(projects.length === 1){ el.textContent = projects[0].name; el.style.color = ''; }
+    else if(projects.length === 0){ el.textContent = '⚠ ไม่พบโครงการที่ผูกไว้ — แจ้งแอดมินตรวจสอบรหัสนี้'; el.style.color = 'var(--bad)'; }
+    else{ el.textContent = 'ลูกค้า / เจ้าของโครงการ'; el.style.color = ''; }
   }catch(e){
     el.textContent = 'ลูกค้า / เจ้าของโครงการ';
   }
