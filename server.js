@@ -312,9 +312,34 @@ const server = http.createServer(async (req, res) => {
       // ever sees that project here — so the picker can't reveal others exist.
       if ((auth.role === "client" || auth.role === "contractor") && auth.projectId) {
         const project = (state.projects || []).find((p) => p.id === auth.projectId);
-        return sendJson(res, 200, { projects: project ? [{ id: project.id, name: project.name }] : [] });
+        return sendJson(res, 200, { projects: project ? [{ id: project.id, name: project.name, showChecklistToClient: Boolean(project.showChecklistToClient) }] : [] });
       }
       return sendJson(res, 200, { projects: getProjectList() });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/invite-codes") {
+      if (!requireAdmin(req, res)) return;
+      return sendJson(res, 200, { inviteCodes: state.inviteCodes, projects: getProjectList() });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/invite-codes") {
+      if (!requireAdmin(req, res)) return;
+      const body = await readJson(req);
+      const result = await createInviteCode(body);
+      return sendJson(res, result.ok ? 201 : result.status || 400, result);
+    }
+
+    const inviteCodeMatch = url.pathname.match(/^\/api\/admin\/invite-codes\/([^/]+)$/);
+    if (inviteCodeMatch && (req.method === "PATCH" || req.method === "DELETE")) {
+      if (!requireAdmin(req, res)) return;
+      const codeParam = decodeURIComponent(inviteCodeMatch[1]);
+      if (req.method === "PATCH") {
+        const body = await readJson(req);
+        const result = await updateInviteCode(codeParam, body);
+        return sendJson(res, result.ok ? 200 : result.status || 400, result);
+      }
+      const result = await deleteInviteCode(codeParam);
+      return sendJson(res, result.ok ? 200 : result.status || 400, result);
     }
 
     if (req.method === "DELETE" && url.pathname.startsWith("/api/contractor/record/")) {
@@ -716,17 +741,17 @@ function listContractorRecords(auth, type) {
   if (auth.role === "contractor") {
     records = records.filter((r) => r.ownerCode === auth.code);
   } else if (auth.role === "client") {
-    // Client only reviews daily diary reports and pre-start plans (for
-    // approval) — never the internal safety checklist, and across every
-    // contractor on the project, not just their own submissions.
-    records = records.filter((r) => r.type === "diary" || r.type === "plan");
     // A client whose invite code is bound to one project (EV_CLIENT_INVITE_CODES)
     // only ever sees that project's records — never another client's work.
-    // The unscoped default client code (no projectId) keeps seeing everything,
-    // for EGAT's own internal reviewers.
+    // The unscoped default client code (no projectId) keeps seeing every
+    // project's diary/plan (never checklist), for EGAT's own internal reviewers.
+    const boundProject = auth.projectId ? (state.projects || []).find((p) => p.id === auth.projectId) : null;
+    const allowChecklist = Boolean(boundProject && boundProject.showChecklistToClient);
+
+    records = records.filter((r) => r.type === "diary" || r.type === "plan" || (r.type === "checklist" && allowChecklist));
+
     if (auth.projectId) {
-      const project = (state.projects || []).find((p) => p.id === auth.projectId);
-      const projectName = project ? project.name : null;
+      const projectName = boundProject ? boundProject.name : null;
       records = records.filter((r) => {
         const p = r.payload || {};
         if (p.projectId) return p.projectId === auth.projectId;
@@ -749,7 +774,94 @@ function listContractorRecords(auth, type) {
 }
 
 function getProjectList() {
-  return (state.projects || []).map((p) => ({ id: p.id, name: p.name }));
+  return (state.projects || []).map((p) => ({ id: p.id, name: p.name, showChecklistToClient: Boolean(p.showChecklistToClient) }));
+}
+
+// Short, URL/label-safe tag pulled from a project name for auto-generating
+// invite codes — prefers the client nickname in the LAST (...) in the name
+// (e.g. "...พร้อมติดตั้ง(TAITAAN)" -> "TAITAAN"), since that's how this org
+// names projects; falls back to the label or the raw name otherwise.
+function extractParenTag(name) {
+  const matches = String(name || "").match(/\(([^)]+)\)/g);
+  if (!matches || !matches.length) return null;
+  return matches[matches.length - 1].slice(1, -1);
+}
+function slugifyCode(text) {
+  return String(text || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9ก-๙]+/g, "")
+    .slice(0, 24);
+}
+function generateInviteCode(role, project, label) {
+  const prefix = role === "client" ? "EV-CLIENT" : "EV-CONTRACTOR";
+  const tag = (project && extractParenTag(project.name)) || label || (project && project.name) || "NEW";
+  const slug = slugifyCode(tag) || "NEW";
+  let code = `${prefix}-${slug}`;
+  let n = 2;
+  while (state.inviteCodes.some((c) => c.code === code)) {
+    code = `${prefix}-${slug}${n}`;
+    n += 1;
+  }
+  return code;
+}
+
+async function createInviteCode(body) {
+  const role = body?.role === "client" || body?.role === "contractor" ? body.role : null;
+  if (!role) return { ok: false, status: 400, error: "role ต้องเป็น 'client' หรือ 'contractor'" };
+
+  const projectId = typeof body?.projectId === "string" && body.projectId ? body.projectId : null;
+  const project = projectId ? (state.projects || []).find((p) => p.id === projectId) : null;
+  if (projectId && !project) return { ok: false, status: 400, error: "projectId ไม่ตรงกับโครงการใดเลย" };
+
+  const label = typeof body?.label === "string" && body.label.trim()
+    ? body.label.trim()
+    : `${role === "client" ? "ลูกค้า" : "ผรม."} ${project ? project.name : ""}`.trim();
+
+  let code = typeof body?.code === "string" && body.code.trim() ? body.code.trim().toUpperCase() : null;
+  if (code) {
+    if (state.inviteCodes.some((c) => c.code === code)) return { ok: false, status: 400, error: "รหัสนี้ถูกใช้ไปแล้ว" };
+  } else {
+    code = generateInviteCode(role, project, label);
+  }
+
+  const entry = { code, role, projectId, label, active: true };
+  state.inviteCodes.push(entry);
+  await saveState();
+  broadcast({ type: "invite-code-added", code });
+  return { ok: true, inviteCode: entry };
+}
+
+async function updateInviteCode(code, body) {
+  const idx = state.inviteCodes.findIndex((c) => c.code === code);
+  if (idx === -1) return { ok: false, status: 404, error: "ไม่พบรหัสนี้" };
+  const current = state.inviteCodes[idx];
+  const next = { ...current };
+  if (typeof body?.label === "string") next.label = body.label.trim();
+  if (typeof body?.active === "boolean") next.active = body.active;
+  if (typeof body?.projectId === "string" && body.projectId) {
+    if (!(state.projects || []).some((p) => p.id === body.projectId)) {
+      return { ok: false, status: 400, error: "projectId ไม่ตรงกับโครงการใดเลย" };
+    }
+    next.projectId = body.projectId;
+  } else if (body?.projectId === null) {
+    next.projectId = null;
+  }
+  state.inviteCodes[idx] = next;
+  await saveState();
+  return { ok: true, inviteCode: next };
+}
+
+async function deleteInviteCode(code) {
+  const idx = state.inviteCodes.findIndex((c) => c.code === code);
+  if (idx === -1) return { ok: false, status: 404, error: "ไม่พบรหัสนี้" };
+  const entry = state.inviteCodes[idx];
+  if (entry.role === "admin") {
+    const adminCount = state.inviteCodes.filter((c) => c.role === "admin" && c.active).length;
+    if (adminCount <= 1) return { ok: false, status: 400, error: "ต้องมีรหัสแอดมินที่ใช้งานได้อย่างน้อย 1 รหัสเสมอ" };
+  }
+  state.inviteCodes.splice(idx, 1);
+  await saveState();
+  return { ok: true };
 }
 
 async function reviewPlanRecord(auth, id, body) {
@@ -839,6 +951,7 @@ async function createProject(body) {
     location: String(body?.location || "").trim(),
     owner: String(body?.owner || "Project Engineer Team").trim(),
     dueDate: body?.dueDate || "",
+    showChecklistToClient: Boolean(body?.showChecklistToClient),
     phases: createDefaultPhases(),
   };
 
@@ -860,6 +973,7 @@ async function updateProject(projectId, body) {
   if (typeof body?.location === "string") project.location = body.location.trim();
   if (typeof body?.owner === "string") project.owner = body.owner.trim();
   if (typeof body?.dueDate === "string") project.dueDate = body.dueDate;
+  if (typeof body?.showChecklistToClient === "boolean") project.showChecklistToClient = body.showChecklistToClient;
 
   state.updatedAt = new Date().toISOString();
   await saveState();
