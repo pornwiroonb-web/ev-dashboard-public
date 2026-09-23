@@ -354,8 +354,8 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/admin/planner-import-preview") {
       if (!requireAdmin(req, res)) return;
       try {
-        const items = await buildPlannerImportPreview();
-        return sendJson(res, 200, { items });
+        const result = await buildPlannerImportPreview();
+        return sendJson(res, 200, result);
       } catch (error) {
         return sendJson(res, 502, { error: error.message || "โหลดข้อมูลจาก Planner ไม่สำเร็จ" });
       }
@@ -891,11 +891,39 @@ async function deleteInviteCode(code) {
 }
 
 // ---- Total Solution Planner import (preview → admin confirms → commit) ----
+// Same fallback list Total Solution Planner itself ships with (its
+// DEFAULT_PROJECTS) — used if the live Google Sheet hasn't been saved with
+// a "projects" array yet (e.g. Planner was only ever used with its local
+// seed data and never triggered a save), so import still works.
+const defaultPlannerProjects = [
+  { id: "1.1", type: "install", name: "บริษัท เอ.ที.59 จำกัด", site: "ISUZU สำนักงานใหญ่ บางแสน ชลบุรี", pkg: "Package L · DC 180 kW ×1" },
+  { id: "1.2", type: "install", name: "บริษัท อีวี เทลวี จำกัด", site: "ปั๊มเชลล์ จ.สุรินทร์", pkg: "Package L+ · DC 180 kW ×3 + Spare ระบบไฟฟ้า 1 ชุด" },
+  { id: "1.3", type: "install", name: "แทนไทย (เทิดราชัน)", site: "", pkg: "Package L · DC 180 kW ×1" },
+  { id: "1.4", type: "install", name: "ฮาร์ดแวร์ เฮ้าส์", site: "รังสิต", pkg: "Package L+ · DC 180 kW ×2" },
+  { id: "2.1", type: "purchase", name: "บริษัท ชาร์จพลัส โซลูชั่น กรุ๊ป", site: "", pkg: "DC 180 kW ×4" },
+  { id: "2.2", type: "purchase", name: "บริษัท คิว.อี แคปิตอล จำกัด", site: "", pkg: "DC 180 kW ×4" },
+  { id: "2.3", type: "purchase", name: "บจก. สถานีชาร์จอีวีหาดใหญ่", site: "", pkg: "DC 180 kW ×2" },
+];
+
 async function fetchPlannerData() {
   const res = await fetch(plannerAppsScriptUrl, { method: "GET" });
-  if (!res.ok) throw new Error(`Planner ตอบกลับผิดพลาด: HTTP ${res.status}`);
-  const data = await res.json();
-  if (!data || !Array.isArray(data.projects)) throw new Error("รูปแบบข้อมูลจาก Planner ไม่ตรงตามที่คาด (ไม่มี projects)");
+  const raw = await res.text();
+  if (!res.ok) {
+    throw new Error(`Planner ตอบกลับผิดพลาด: HTTP ${res.status} — ${raw.slice(0, 200)}`);
+  }
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(`Planner ไม่ได้ตอบกลับเป็น JSON — เนื้อหาที่ได้: ${raw.slice(0, 200)}`);
+  }
+  if (!data || typeof data !== "object") {
+    throw new Error(`Planner ตอบกลับไม่ใช่ object ที่ใช้ได้ — เนื้อหาที่ได้: ${raw.slice(0, 200)}`);
+  }
+  if (!Array.isArray(data.projects) || data.projects.length === 0) {
+    data.projects = defaultPlannerProjects;
+    data.projectsFallback = true;
+  }
   return data;
 }
 
@@ -936,7 +964,7 @@ function suggestProjectMatch(plannerEntry, projects) {
 async function buildPlannerImportPreview() {
   const plannerData = await fetchPlannerData();
   const plannerProjects = plannerData.projects || [];
-  return plannerProjects.map((p) => {
+  const items = plannerProjects.map((p) => {
     const alreadyLinked = (state.projects || []).find((sp) => sp.plannerId === p.id) || null;
     const suggestion = alreadyLinked ? null : suggestProjectMatch(p, state.projects || []);
     return {
@@ -951,6 +979,7 @@ async function buildPlannerImportPreview() {
       suggestedProjectName: suggestion ? suggestion.name : null,
     };
   });
+  return { items, usedFallback: Boolean(plannerData.projectsFallback) };
 }
 
 async function commitPlannerImport(items) {
