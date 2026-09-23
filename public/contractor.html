@@ -449,6 +449,11 @@ async function checkAuthOnLoad(){
   }catch(e){}
   const id = getIdentity();
   setVal('gName', id.name); setVal('gCompany', id.company);
+  const qsCode = new URLSearchParams(window.location.search).get('code');
+  if(qsCode){
+    setVal('gCode', qsCode);
+    window.history.replaceState({}, '', window.location.pathname);
+  }
   document.getElementById('gate').style.display = 'flex';
 }
 

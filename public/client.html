@@ -210,6 +210,11 @@ async function checkAuthOnLoad(){
     if(data.authenticated){ await enterApp(); return; }
   }catch(e){}
   setVal('gName', localStorage.getItem(K_NAME) || '');
+  const qsCode = new URLSearchParams(window.location.search).get('code');
+  if(qsCode){
+    setVal('gCode', qsCode);
+    window.history.replaceState({}, '', window.location.pathname);
+  }
   document.getElementById('gate').style.display = 'flex';
 }
 
