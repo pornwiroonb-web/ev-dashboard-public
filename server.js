@@ -731,8 +731,13 @@ function listContractorRecords(auth, type) {
         const p = r.payload || {};
         if (p.projectId) return p.projectId === auth.projectId;
         // Back-compat for records saved before contractors picked a project
-        // from the list: match by the free-text project name they typed.
-        return projectName && typeof p.project === "string" && p.project.trim() === projectName;
+        // from the list (free-text project name, possibly not word-for-word
+        // identical to the real project name) — same loose matching as
+        // resolveProjectId: exact match, or either string contains the other.
+        if (!projectName || typeof p.project !== "string" || !p.project.trim()) return false;
+        const a = p.project.trim().toLowerCase();
+        const b = projectName.trim().toLowerCase();
+        return a === b || a.includes(b) || b.includes(a);
       });
     }
   }
