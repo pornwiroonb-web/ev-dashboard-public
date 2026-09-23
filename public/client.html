@@ -140,10 +140,10 @@
 
   <div id="app">
     <header class="appbar">
-      <div class="id-block"><div class="avatar" id="avaInit">-</div><div class="id-text"><div class="name" id="idName">-</div><div class="co">ลูกค้า / เจ้าของโครงการ</div></div></div>
+      <div class="id-block"><div class="avatar" id="avaInit">-</div><div class="id-text"><div class="name" id="idName">-</div><div class="co" id="idProject">ลูกค้า / เจ้าของโครงการ</div></div></div>
       <button class="logout" onclick="doLogout()">ออกจากระบบ</button>
     </header>
-    <div class="banner"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span><span>มุมมองลูกค้า — <b>อ่านอย่างเดียว</b> ยกเว้นการอนุมัติ/ไม่อนุมัติแผนเข้างาน</span></div>
+    <div class="banner"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span><span>มุมมองลูกค้า — เห็นเฉพาะข้อมูลโครงการของคุณ <b>อ่านอย่างเดียว</b> ยกเว้นการอนุมัติ/ไม่อนุมัติแผนเข้างาน</span></div>
 
     <main id="mainScroll">
       <section class="tab-panel active" id="tab-diary">
@@ -245,8 +245,20 @@ async function enterApp(){
   document.getElementById('app').style.display = 'flex';
   document.getElementById('idName').textContent = currentName;
   document.getElementById('avaInit').textContent = currentName.trim().charAt(0) || '?';
+  loadScopedProject();
   renderDiary();
   renderApprovals();
+}
+
+async function loadScopedProject(){
+  const el = document.getElementById('idProject');
+  try{
+    const data = await api('/api/contractor/projects');
+    const projects = data.projects || [];
+    el.textContent = projects.length === 1 ? projects[0].name : 'ลูกค้า / เจ้าของโครงการ';
+  }catch(e){
+    el.textContent = 'ลูกค้า / เจ้าของโครงการ';
+  }
 }
 
 function switchTab(name){
