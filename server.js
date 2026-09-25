@@ -791,6 +791,10 @@ async function createContractorRecord(auth, body) {
   broadcast({ type: "contractor-record-added", recordType: type });
   if (type === "plan") {
     notifyClientsOfNewPlan(payload).catch((error) => console.error("LINE notify (new plan) failed:", error.message));
+  } else if (type === "diary") {
+    notifyClientsOfNewDiary(payload).catch((error) => console.error("LINE notify (new diary) failed:", error.message));
+  } else if (type === "checklist") {
+    notifyClientsOfNewChecklist(payload).catch((error) => console.error("LINE notify (new checklist) failed:", error.message));
   }
   return { ok: true, record };
 }
@@ -1336,6 +1340,47 @@ async function notifyClientsOfNewPlan(payload) {
     `ขอบเขตงาน: ${String(payload.scope || "-").slice(0, 100)}`,
     "",
     "เข้าไปอนุมัติได้ที่หน้าพอร์ทัลลูกค้า",
+  ].join("\n");
+  await Promise.allSettled(targets.map((t) => linePush(t.lineUserId, text)));
+}
+
+const STATUS_LABEL_TH = { notstarted: "ยังไม่เริ่ม", doing: "กำลังดำเนินการ", done: "เสร็จตามแผน", issue: "ติดปัญหา/ล่าช้า" };
+
+// Diary reports are visible to every client scoped to the project (same as
+// plans) — including the unscoped default client code, which sees every
+// project's diary.
+async function notifyClientsOfNewDiary(payload) {
+  const targets = (state.inviteCodes || []).filter(
+    (c) => c.role === "client" && c.active && c.lineUserId && (!c.projectId || c.projectId === payload.projectId)
+  );
+  if (targets.length === 0) return;
+  const text = [
+    "📓 มี Diary Report ใหม่",
+    `โครงการ: ${payload.project || "-"}`,
+    `ผู้รายงาน: ${payload.reporter || "-"}${payload.company ? " (" + payload.company + ")" : ""}`,
+    `งานที่ดำเนินการ: ${String(payload.work || "-").slice(0, 100)}`,
+    payload.status ? `สถานะ: ${STATUS_LABEL_TH[payload.status] || payload.status}` : "",
+  ].filter(Boolean).join("\n");
+  await Promise.allSettled(targets.map((t) => linePush(t.lineUserId, text)));
+}
+
+// Checklist stays internal by default — only notify a client if their code
+// is bound to this exact project AND that project has opted in via
+// showChecklistToClient (mirrors listContractorRecords' own visibility
+// rule, so nobody is ever notified about data they can't actually open).
+async function notifyClientsOfNewChecklist(payload) {
+  const targets = (state.inviteCodes || []).filter((c) => {
+    if (c.role !== "client" || !c.active || !c.lineUserId) return false;
+    if (!c.projectId || c.projectId !== payload.projectId) return false;
+    const project = (state.projects || []).find((p) => p.id === c.projectId);
+    return Boolean(project && project.showChecklistToClient);
+  });
+  if (targets.length === 0) return;
+  const text = [
+    "✅ มี Checklist ความปลอดภัยใหม่",
+    `โครงการ: ${payload.project || "-"}`,
+    `ผู้ตรวจสอบ: ${payload.inspector || "-"}`,
+    `ผลรวม: ผ่าน ${payload.passed}/${payload.total} รายการ (${payload.pct}%)`,
   ].join("\n");
   await Promise.allSettled(targets.map((t) => linePush(t.lineUserId, text)));
 }
