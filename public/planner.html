@@ -256,6 +256,7 @@ const CATEGORY = {
       {n:'งานขอมิเตอร์', d:30},
       {n:'งานขยายเขตไฟฟ้า', d:25},
       {n:'ติดตั้งหม้อแปลง', d:20},
+      {n:'งานติดตั้งเครื่อง', d:15},
       {n:'งานตรวจรับ', d:10},
       {n:'ส่งมอบ', d:5},
     ]
@@ -312,6 +313,7 @@ const SEED = {
     ['งานขอมิเตอร์','done','2026-04-10','2026-05-10',''],
     ['งานขยายเขตไฟฟ้า','done','2026-04-10','2026-05-05',''],
     ['ติดตั้งหม้อแปลง','done','2026-04-21','2026-05-15',''],
+    ['งานติดตั้งเครื่อง','done','2026-05-16','2026-05-31',''],
     ['งานตรวจรับ','in-progress','2026-06-01','2026-07-20','รอตรวจรับงวดสุดท้าย'],
     ['ส่งมอบ','not-started','2026-07-21','2026-07-31',''],
   ],
@@ -326,6 +328,7 @@ const SEED = {
     ['งานขอมิเตอร์','not-started','2026-08-01','2026-09-15',''],
     ['งานขยายเขตไฟฟ้า','not-started','2026-08-01','2026-09-15',''],
     ['ติดตั้งหม้อแปลง','not-started','2026-08-16','2026-09-10',''],
+    ['งานติดตั้งเครื่อง','not-started','2026-09-01','2026-09-15',''],
     ['งานตรวจรับ','not-started','2026-09-16','2026-10-10',''],
     ['ส่งมอบ','not-started','2026-10-11','2026-10-20',''],
   ],
@@ -340,6 +343,7 @@ const SEED = {
     ['งานขอมิเตอร์','not-started','2026-10-28','2026-11-27',''],
     ['งานขยายเขตไฟฟ้า','not-started','2026-10-28','2026-11-22',''],
     ['ติดตั้งหม้อแปลง','not-started','2026-11-01','2026-11-21',''],
+    ['งานติดตั้งเครื่อง','not-started','2026-11-15','2026-11-27',''],
     ['งานตรวจรับ','not-started','2026-11-28','2026-12-08',''],
     ['ส่งมอบ','not-started','2026-12-09','2026-12-14',''],
   ],
@@ -354,6 +358,7 @@ const SEED = {
     ['งานขอมิเตอร์','not-started','2026-10-28','2026-11-27',''],
     ['งานขยายเขตไฟฟ้า','not-started','2026-10-28','2026-11-22',''],
     ['ติดตั้งหม้อแปลง','not-started','2026-11-01','2026-11-21',''],
+    ['งานติดตั้งเครื่อง','not-started','2026-11-15','2026-11-27',''],
     ['งานตรวจรับ','not-started','2026-11-28','2026-12-08',''],
     ['ส่งมอบ','not-started','2026-12-09','2026-12-14',''],
   ],
@@ -463,6 +468,7 @@ async function loadAll(){
       PROJECTS.forEach(p=>{
         if(!DATA[p.id]){ DATA[p.id] = defaultPhasesFor(p); missing = true; }
       });
+      if(migratePhases()) missing = true;
       if(missing){ await savePlannerToServer({ version: SEED_VERSION, data: DATA, projects: PROJECTS }); }
       return;
     }
@@ -472,6 +478,33 @@ async function loadAll(){
   PROJECTS.forEach(p=>{ DATA[p.id] = defaultPhasesFor(p); });
   try{ await savePlannerToServer({ version: SEED_VERSION, data: DATA, projects: PROJECTS }); }
   catch(e){ console.error('initial save failed', e); }
+}
+
+/* ============ MIGRATION: เติมขั้นตอนใหม่ให้โปรเจคเดิมที่บันทึกไว้แล้ว ============ */
+// เมื่อเพิ่มขั้นตอนใหม่ในแม่แบบ CATEGORY โปรเจคที่บันทึกไว้ใน Google Sheet ก่อนหน้าจะยังไม่มีขั้นตอนนั้น
+// ฟังก์ชันนี้จะแทรกขั้นตอนที่ขาดไว้ในตำแหน่งที่ถูกต้อง (ต่อจากขั้นตอนก่อนหน้าในแม่แบบ) โดยไม่แตะข้อมูลเดิม
+function migratePhases(){
+  let changed = false;
+  PROJECTS.forEach(p=>{
+    const cat = CATEGORY[p.type];
+    const rows = DATA[p.id];
+    if(!cat || !Array.isArray(rows)) return;
+    cat.phases.forEach((ph, idx)=>{
+      if(rows.some(r=>r.name===ph.n)) return;
+      // หาขั้นตอนก่อนหน้าในแม่แบบที่มีอยู่จริง แล้วแทรกต่อท้าย
+      let insertAt = 0, prev = null;
+      for(let k=idx-1; k>=0; k--){
+        const pos = rows.findIndex(r=>r.name===cat.phases[k].n);
+        if(pos>=0){ insertAt = pos+1; prev = rows[pos]; break; }
+      }
+      const base = prev && prev.end ? new Date(prev.end+'T00:00:00') : new Date(TODAY);
+      const start = fmtDate(base);
+      const end = fmtDate(addDays(base, ph.d));
+      rows.splice(insertAt, 0, { name: ph.n, status:'not-started', start, end, note:'' });
+      changed = true;
+    });
+  });
+  return changed;
 }
 
 /* ============ ADD / DELETE PROJECT ============ */
@@ -965,6 +998,8 @@ async function autoRefresh(){
     const remote = await fetchPlannerFromServer();
     if(remote && remote.data && Object.keys(remote.data).length){
       DATA = remote.data;
+      if(remote.projects && Array.isArray(remote.projects) && remote.projects.length) PROJECTS = remote.projects;
+      migratePhases();
       renderAll();
     }
   }catch(e){ console.error('auto-refresh failed', e); }
