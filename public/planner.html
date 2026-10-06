@@ -449,7 +449,48 @@ async function saveProject(id, phases){
   await saveAll();
 }
 
+/* ============ PROJECT REGISTRY PERSISTENCE ============ */
+// Google Sheet (Apps Script) เก็บเฉพาะข้อมูลขั้นตอน (PlannerData) ไม่ได้เก็บรายชื่อโปรเจค (projects)
+// จึงเก็บรายชื่อโปรเจคไว้ใน DATA ภายใต้คีย์พิเศษ META_KEY แต่ละแถว = 1 โปรเจค (ข้อมูลอยู่ในช่อง note เป็น JSON)
+// ทำให้โปรเจคที่เพิ่มเอง / ชื่อที่แก้ / โปรเจคที่ลบ ถูกจำไว้จริง ไม่หายเมื่อรีเฟรชหน้า
+const META_KEY = '__projects__';
+function encodeProjectsMeta(projects){
+  return projects.map(p=>({ name:'project', status:'meta', start:'', end:'',
+    note: JSON.stringify({id:String(p.id), type:p.type, name:p.name||'', site:p.site||'', pkg:p.pkg||''}) }));
+}
+function decodeProjectsMeta(rows){
+  if(!Array.isArray(rows)) return [];
+  const out = [];
+  rows.forEach(r=>{
+    try{
+      const o = JSON.parse(r && r.note);
+      if(o && o.id && CATEGORY[o.type]) out.push({id:String(o.id), type:o.type, name:o.name||'', site:o.site||'', pkg:o.pkg||''});
+    }catch(e){}
+  });
+  return out;
+}
+function idSort(a,b){
+  const [a1,a2]=String(a.id).split('.').map(Number), [b1,b2]=String(b.id).split('.').map(Number);
+  return (a1-b1)||((a2||0)-(b2||0));
+}
+// เลือกรายชื่อโปรเจคจากข้อมูลบนเซิร์ฟเวอร์: projects (ถ้ามี) → META_KEY → ค่าเริ่มต้น
+// แล้วกู้คืนโปรเจคที่มีข้อมูลขั้นตอนอยู่แต่ไม่มีชื่อในรายชื่อ (เช่น โปรเจคที่เพิ่มก่อนแก้บั๊กนี้)
+function resolveProjects(remote, data){
+  let list = [];
+  if(remote && Array.isArray(remote.projects) && remote.projects.length) list = remote.projects.map(p=>({...p, id:String(p.id)}));
+  else if(data && data[META_KEY]) list = decodeProjectsMeta(data[META_KEY]);
+  if(!list.length) list = DEFAULT_PROJECTS.map(p=>({...p}));
+  const known = new Set(list.map(p=>p.id));
+  Object.keys(data||{}).forEach(id=>{
+    if(id===META_KEY || known.has(id) || !Array.isArray(data[id])) return;
+    const type = String(id).startsWith('2') ? 'purchase' : 'install';
+    list.push({ id, type, name:`โปรเจค ${id} (ยังไม่มีชื่อ)`, site:'', pkg:'' });
+  });
+  return list.sort(idSort);
+}
+
 async function saveAll(){
+  DATA[META_KEY] = encodeProjectsMeta(PROJECTS);
   isSaving = true;
   try{ await savePlannerToServer({ version: SEED_VERSION, data: DATA, projects: PROJECTS }); }
   catch(e){ console.error('save failed', e); }
@@ -461,21 +502,21 @@ async function loadAll(){
     const remote = await fetchPlannerFromServer();
     if(remote && remote.version === SEED_VERSION && remote.data){
       DATA = remote.data;
-      if(remote.projects && Array.isArray(remote.projects) && remote.projects.length){
-        PROJECTS = remote.projects;
-      }
-      let missing = false;
+      const hadMeta = Array.isArray(DATA[META_KEY]) && DATA[META_KEY].length>0;
+      PROJECTS = resolveProjects(remote, DATA);
+      let missing = !hadMeta; // ยังไม่เคยบันทึกรายชื่อโปรเจค → บันทึกครั้งแรก
       PROJECTS.forEach(p=>{
         if(!DATA[p.id]){ DATA[p.id] = defaultPhasesFor(p); missing = true; }
       });
       if(migratePhases()) missing = true;
-      if(missing){ await savePlannerToServer({ version: SEED_VERSION, data: DATA, projects: PROJECTS }); }
+      if(missing){ DATA[META_KEY] = encodeProjectsMeta(PROJECTS); await savePlannerToServer({ version: SEED_VERSION, data: DATA, projects: PROJECTS }); }
       return;
     }
   }catch(e){ console.error('load failed, falling back to seed data', e); }
 
   DATA = {};
   PROJECTS.forEach(p=>{ DATA[p.id] = defaultPhasesFor(p); });
+  DATA[META_KEY] = encodeProjectsMeta(PROJECTS);
   try{ await savePlannerToServer({ version: SEED_VERSION, data: DATA, projects: PROJECTS }); }
   catch(e){ console.error('initial save failed', e); }
 }
@@ -809,6 +850,7 @@ function renderDetail(){
           <div class="label">ความคืบหน้า</div>
           <div class="value gold num">${perc}%</div>
         </div>
+        <button class="btn small" id="editProjBtn">&#9998; แก้ไขข้อมูล</button>
         <button class="btn danger small" id="deleteProjBtn">&#128465; ลบโปรเจคนี้</button>
       </div>
     </div>
@@ -821,6 +863,20 @@ function renderDetail(){
   `;
 
   document.getElementById('backBtn').onclick = ()=>{ state.view='dashboard'; state.activeProject=null; renderAll(); };
+  const editBtn = document.getElementById('editProjBtn');
+  if(editBtn){
+    editBtn.onclick = async ()=>{
+      const name = prompt('ชื่อโปรเจค / ชื่อลูกค้า', p.name.startsWith('โปรเจค '+p.id+' (ยังไม่มีชื่อ') ? '' : p.name);
+      if(name===null) return;
+      if(!name.trim()){ alert('กรุณากรอกชื่อโปรเจค'); return; }
+      const site = prompt('สถานที่ / หน้างาน', p.site||''); if(site===null) return;
+      const pkg = prompt('แพ็กเกจ / สเปก', p.pkg||''); if(pkg===null) return;
+      p.name = name.trim(); p.site = site.trim(); p.pkg = pkg.trim();
+      await saveAll();
+      renderAll();
+      showToast(`บันทึกข้อมูลโปรเจค ${p.id} แล้ว ✓`);
+    };
+  }
   const delBtn = document.getElementById('deleteProjBtn');
   if(delBtn){
     delBtn.onclick = async ()=>{
@@ -998,7 +1054,7 @@ async function autoRefresh(){
     const remote = await fetchPlannerFromServer();
     if(remote && remote.data && Object.keys(remote.data).length){
       DATA = remote.data;
-      if(remote.projects && Array.isArray(remote.projects) && remote.projects.length) PROJECTS = remote.projects;
+      PROJECTS = resolveProjects(remote, DATA);
       migratePhases();
       renderAll();
     }

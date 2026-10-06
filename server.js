@@ -957,6 +957,13 @@ async function fetchPlannerData() {
   if (!data || typeof data !== "object") {
     throw new Error(`Planner ตอบกลับไม่ใช่ object ที่ใช้ได้ — เนื้อหาที่ได้: ${raw.slice(0, 200)}`);
   }
+  // planner.html stores its project registry inside data.__projects__ (one row per project, JSON in `note`)
+  // because the Apps Script sheet only persists phase rows.
+  if ((!Array.isArray(data.projects) || data.projects.length === 0) && data.data && Array.isArray(data.data.__projects__)) {
+    data.projects = data.data.__projects__
+      .map((r) => { try { return JSON.parse(r && r.note); } catch { return null; } })
+      .filter((o) => o && o.id);
+  }
   if (!Array.isArray(data.projects) || data.projects.length === 0) {
     data.projects = defaultPlannerProjects;
     data.projectsFallback = true;
