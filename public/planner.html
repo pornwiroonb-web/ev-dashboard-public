@@ -239,7 +239,9 @@
 
 <script>
 /* ============ DATA MODEL ============ */
-const TODAY = new Date('2026-07-13T00:00:00');
+// วันนี้ = วันที่ปัจจุบันจริงของเครื่องผู้ใช้ (เที่ยงคืน) อัปเดตใหม่ทุกครั้งที่ render หน้าจอ
+function startOfToday(){ const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+let TODAY = startOfToday();
 
 const CATEGORY = {
   install: {
@@ -760,9 +762,12 @@ function renderDashboard(){
 
 /* ============ RENDER: PORTFOLIO GANTT ============ */
 function renderGantt(){
-  // เส้นเวลาคงที่: มกราคม - ธันวาคม 2569 ตามที่กำหนด
+  // เส้นเวลาเริ่ม ม.ค. 2569 และขยายอัตโนมัติจนถึงสิ้นเดือนของงานที่จบช้าที่สุด (หรือวันนี้) อย่างน้อยถึง ธ.ค. 2569
   const minD = new Date('2026-01-01T00:00:00');
-  const maxD = new Date('2026-12-31T00:00:00');
+  let latest = new Date('2026-12-31T00:00:00');
+  if(TODAY > latest) latest = new Date(TODAY);
+  PROJECTS.forEach(p=>(DATA[p.id]||[]).forEach(ph=>{ const e = new Date(ph.end+'T00:00:00'); if(!isNaN(e) && e > latest) latest = e; }));
+  const maxD = new Date(latest.getFullYear(), latest.getMonth()+1, 0);
   const totalMs = maxD - minD;
   const todayPos = Math.min(100, Math.max(0, ((TODAY - minD)/totalMs)*100));
 
@@ -1036,6 +1041,7 @@ async function openImportModal(file){
 
 /* ============ MAIN RENDER ============ */
 function renderAll(){
+  TODAY = startOfToday();
   renderSidebar();
   if(state.view==='dashboard') renderDashboard();
   else if(state.view==='gantt') renderGantt();
