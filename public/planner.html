@@ -492,6 +492,10 @@ function resolveProjects(remote, data){
 }
 
 async function saveAll(){
+  if(!loadOk){
+    showToast('ยังโหลดข้อมูลจาก Google Sheet ไม่สำเร็จ — ไม่ได้บันทึก กรุณารีเฟรชหน้าแล้วลองใหม่', 5000);
+    return;
+  }
   DATA[META_KEY] = encodeProjectsMeta(PROJECTS);
   isSaving = true;
   try{ await savePlannerToServer({ version: SEED_VERSION, data: DATA, projects: PROJECTS }); }
@@ -499,28 +503,52 @@ async function saveAll(){
   finally{ isSaving = false; }
 }
 
-async function loadAll(){
-  try{
-    const remote = await fetchPlannerFromServer();
-    if(remote && remote.version === SEED_VERSION && remote.data){
-      DATA = remote.data;
-      const hadMeta = Array.isArray(DATA[META_KEY]) && DATA[META_KEY].length>0;
-      PROJECTS = resolveProjects(remote, DATA);
-      let missing = !hadMeta; // ยังไม่เคยบันทึกรายชื่อโปรเจค → บันทึกครั้งแรก
-      PROJECTS.forEach(p=>{
-        if(!DATA[p.id]){ DATA[p.id] = defaultPhasesFor(p); missing = true; }
-      });
-      if(migratePhases()) missing = true;
-      if(missing){ DATA[META_KEY] = encodeProjectsMeta(PROJECTS); await savePlannerToServer({ version: SEED_VERSION, data: DATA, projects: PROJECTS }); }
-      return;
-    }
-  }catch(e){ console.error('load failed, falling back to seed data', e); }
+// สำคัญ: จะไม่บันทึกทับ Google Sheet เด็ดขาด ถ้ายังโหลดข้อมูลจากเซิร์ฟเวอร์ไม่สำเร็จ
+// (เดิมเมื่อโหลดล้มเหลวครั้งเดียว ระบบจะเอาข้อมูลตั้งต้นไปเขียนทับชีตทั้งหมด → โปรเจคที่เพิ่ม/แก้ไว้หาย)
+let loadOk = false;
+function hasRealData(remote){
+  return !!(remote && remote.data && typeof remote.data==='object' &&
+    Object.keys(remote.data).some(k=>Array.isArray(remote.data[k]) && remote.data[k].length));
+}
+function applyRemote(remote){
+  DATA = remote.data;
+  const hadMeta = Array.isArray(DATA[META_KEY]) && DATA[META_KEY].length>0;
+  PROJECTS = resolveProjects(remote, DATA);
+  let missing = !hadMeta;
+  PROJECTS.forEach(p=>{ if(!DATA[p.id]){ DATA[p.id] = defaultPhasesFor(p); missing = true; } });
+  if(migratePhases()) missing = true;
+  return missing;
+}
+function showLoadBanner(show){
+  let b = document.getElementById('loadErrBanner');
+  if(!show){ if(b) b.remove(); return; }
+  if(b) return;
+  b = document.createElement('div');
+  b.id = 'loadErrBanner';
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#7a1f12;color:#fff;padding:10px 16px;font-size:13px;text-align:center';
+  b.textContent = '⚠ โหลดข้อมูลจาก Google Sheet ไม่สำเร็จ — ระบบปิดการบันทึกไว้ชั่วคราวเพื่อป้องกันข้อมูลถูกเขียนทับ กำลังลองใหม่อัตโนมัติ (หรือกดรีเฟรชหน้า)';
+  document.body.appendChild(b);
+}
 
+async function loadAll(){
+  let remote = null, fetched = false;
+  for(let attempt=0; attempt<3 && !fetched; attempt++){
+    try{ remote = await fetchPlannerFromServer(); fetched = true; }
+    catch(e){ console.error('load attempt '+(attempt+1)+' failed', e); await new Promise(r=>setTimeout(r, 1500*(attempt+1))); }
+  }
+
+  if(fetched && hasRealData(remote)){
+    loadOk = true;
+    if(applyRemote(remote)) await saveAll();
+    return;
+  }
+  // ข้อมูลว่างหรือโหลดไม่สำเร็จ ถือว่าผิดปกติ (ชีตจริงมีข้อมูลอยู่แล้ว) → ไม่เขียนทับเด็ดขาด
+  // โหลดไม่สำเร็จ → แสดงข้อมูลตั้งต้นเพื่อดูเท่านั้น ห้ามบันทึก
+  loadOk = false;
   DATA = {};
+  PROJECTS = DEFAULT_PROJECTS.map(p=>({...p}));
   PROJECTS.forEach(p=>{ DATA[p.id] = defaultPhasesFor(p); });
-  DATA[META_KEY] = encodeProjectsMeta(PROJECTS);
-  try{ await savePlannerToServer({ version: SEED_VERSION, data: DATA, projects: PROJECTS }); }
-  catch(e){ console.error('initial save failed', e); }
+  showLoadBanner(true);
 }
 
 /* ============ MIGRATION: เติมขั้นตอนใหม่ให้โปรเจคเดิมที่บันทึกไว้แล้ว ============ */
@@ -1055,13 +1083,15 @@ const AUTO_REFRESH_MS = 20000;
 let isSaving = false;
 
 async function autoRefresh(){
-  if(state.view === 'detail' || isSaving) return; // อย่าไปแทรกตอนกำลังแก้ไข/บันทึกอยู่
+  if((state.view === 'detail' && loadOk) || isSaving) return; // อย่าไปแทรกตอนกำลังแก้ไข/บันทึกอยู่
   try{
     const remote = await fetchPlannerFromServer();
-    if(remote && remote.data && Object.keys(remote.data).length){
-      DATA = remote.data;
-      PROJECTS = resolveProjects(remote, DATA);
-      migratePhases();
+    if(hasRealData(remote)){
+      const wasOk = loadOk;
+      loadOk = true;
+      showLoadBanner(false);
+      const missing = applyRemote(remote);
+      if(!wasOk && missing) await saveAll();
       renderAll();
     }
   }catch(e){ console.error('auto-refresh failed', e); }
