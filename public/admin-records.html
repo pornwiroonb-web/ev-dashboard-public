@@ -62,7 +62,24 @@
   .detail-row .dk{font-size:11.5px;color:var(--muted);margin-bottom:3px;font-weight:600;}
   .detail-row .dv{font-size:14.5px;line-height:1.55;white-space:pre-wrap;}
   .detail-imgs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
-  .detail-imgs img{width:72px;height:72px;object-fit:cover;border-radius:9px;border:1px solid var(--line);}
+  .detail-imgs .thumb{position:relative;width:72px;height:72px;}
+  .detail-imgs .thumb img{width:72px;height:72px;object-fit:cover;border-radius:9px;border:1px solid var(--line);display:block;}
+  .detail-imgs .thumb a.dl{position:absolute;right:2px;bottom:2px;width:22px;height:22px;border-radius:7px;background:rgba(10,16,24,.85);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--accent);text-decoration:none;font-size:12px;}
+  .modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .btn-sm{background:var(--panel-strong);border:1.5px solid var(--line);color:var(--text);border-radius:10px;padding:8px 13px;font-size:12.5px;font-family:var(--font-ui);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .btn-sm:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-sm.primary{background:var(--accent);border-color:var(--accent);color:#1a1200;font-weight:700;}
+  @media print{
+    body *{visibility:hidden;}
+    #printSheet, #printSheet *{visibility:visible;}
+    #printSheet{display:block !important;position:absolute;left:0;top:0;width:100%;padding:24px;background:#fff;color:#111;}
+    #printSheet .dk{color:#555;font-weight:700;font-size:11px;}
+    #printSheet .dv{color:#111;white-space:pre-wrap;}
+    #printSheet .detail-row{border-bottom:1px solid #ccc;padding:10px 0;}
+    #printSheet img{max-width:140px;max-height:140px;object-fit:cover;border:1px solid #ccc;border-radius:6px;}
+    #printSheet h2{color:#111;}
+  }
+  #printSheet{display:none;}
 </style>
 </head>
 <body>
@@ -88,9 +105,15 @@
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this) closeModal()">
   <div class="modal">
     <div class="modal-head"><h3 id="modalTitle">รายละเอียด</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-actions">
+      <button class="btn-sm primary" onclick="printCurrentRecord()">🖨️ พิมพ์ / บันทึก PDF</button>
+      <button class="btn-sm" id="btnDownloadPhotos" style="display:none" onclick="downloadAllCurrentPhotos()">⬇️ ดาวน์โหลดรูปทั้งหมด</button>
+    </div>
     <div id="modalBody"></div>
   </div>
 </div>
+
+<div id="printSheet"></div>
 
 <script>
 if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{})); }
@@ -174,9 +197,12 @@ function render(){
   }).join('');
 }
 
+let currentRecord = null;
+
 function viewRecord(id){
   const r = allRecords.find(x=>x.id===id);
   if(!r) return;
+  currentRecord = r;
   const p = r.payload||{};
   document.getElementById('modalTitle').textContent = TYPE_LABEL[r.type];
   let html = '';
@@ -189,8 +215,12 @@ function viewRecord(id){
   if(r.type==='checklist' && Array.isArray(p.items)){
     html += p.items.map(it=>`<div class="detail-row"><div class="dk">${it.category}</div><div class="dv">${it.passed?'✓ ผ่าน':'✗ ไม่ผ่าน'} — ${escapeHtml(it.item)}${it.note?' — '+escapeHtml(it.note):''}</div></div>`).join('');
   }
+  const btnDl = document.getElementById('btnDownloadPhotos');
   if(r.type==='diary' && p.photos && p.photos.length){
-    html += `<div class="detail-row"><div class="dk">รูปภาพหน้างาน</div><div class="detail-imgs">${p.photos.map(src=>`<img src="${src}">`).join('')}</div></div>`;
+    html += `<div class="detail-row"><div class="dk">รูปภาพหน้างาน (${p.photos.length} รูป)</div><div class="detail-imgs">${p.photos.map((src,i)=>`<div class="thumb"><img src="${src}" onclick="window.open('${src}','_blank')"><a class="dl" href="${src}" download="diary-${r.id}-${i+1}.jpg" title="ดาวน์โหลดรูปนี้">⬇</a></div>`).join('')}</div></div>`;
+    btnDl.style.display = 'inline-flex';
+  } else {
+    btnDl.style.display = 'none';
   }
   if(r.type==='plan' && p.approval){
     const st = p.approval.status||'pending';
@@ -204,6 +234,36 @@ function viewRecord(id){
   document.getElementById('modalBg').classList.add('open');
 }
 function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
+
+function printCurrentRecord(){
+  if(!currentRecord) return;
+  const r = currentRecord;
+  const p = r.payload||{};
+  const dt = new Date(r.createdAt);
+  const dtStr = dt.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + dt.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  let html = `<h2>${TYPE_LABEL[r.type]}</h2><div class="dk" style="margin-bottom:12px;">บันทึกเมื่อ ${dtStr}</div>`;
+  // reuse the same body already rendered in the modal (minus the download-icon overlays, which print fine as plain <img> anyway)
+  html += document.getElementById('modalBody').innerHTML
+    .replace(/<a class="dl"[^>]*>⬇<\/a>/g, '')
+    .replace(/ onclick="window\.open\([^"]*\)"/g, '');
+  document.getElementById('printSheet').innerHTML = html;
+  window.print();
+}
+
+function downloadAllCurrentPhotos(){
+  if(!currentRecord) return;
+  const photos = (currentRecord.payload||{}).photos || [];
+  photos.forEach((src, i)=>{
+    setTimeout(()=>{
+      const a = document.createElement('a');
+      a.href = src;
+      a.download = `diary-${currentRecord.id}-${i+1}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }, i * 350); // stagger so the browser doesn't block multiple simultaneous downloads
+  });
+}
 
 init();
 </script>
