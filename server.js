@@ -381,6 +381,14 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, result.ok ? 200 : result.status || 400, result);
     }
 
+    if (req.method === "GET" && url.pathname === "/api/admin/energy-pm-sheet") {
+      if (!requireAdmin(req, res)) return;
+      const projectId = url.searchParams.get("projectId") || "";
+      const project = state.projects.find((p) => p.id === projectId);
+      if (!project) return sendJson(res, 404, { error: "Project not found" });
+      return sendJson(res, 200, buildEnergyPmSheet(project));
+    }
+
     if (req.method === "GET" && url.pathname === "/api/admin/planner-import-preview") {
       if (!requireAdmin(req, res)) return;
       try {
@@ -1155,6 +1163,13 @@ async function createProject(body) {
     owner: String(body?.owner || "Project Engineer Team").trim(),
     dueDate: body?.dueDate || "",
     showChecklistToClient: Boolean(body?.showChecklistToClient),
+    // Fields Energy PM's Overview tab needs that aren't tracked anywhere else
+    // in this app. Optional — filled in once here so the Energy PM summary
+    // sheet (see buildEnergyPmSheet) never has to ask twice.
+    projectCode: String(body?.projectCode || "").trim(),
+    poNumber: String(body?.poNumber || "").trim(),
+    budget: String(body?.budget || "").trim(),
+    startDate: body?.startDate || "",
     phases: createDefaultPhases(),
   };
 
@@ -1177,11 +1192,74 @@ async function updateProject(projectId, body) {
   if (typeof body?.owner === "string") project.owner = body.owner.trim();
   if (typeof body?.dueDate === "string") project.dueDate = body.dueDate;
   if (typeof body?.showChecklistToClient === "boolean") project.showChecklistToClient = body.showChecklistToClient;
+  if (typeof body?.projectCode === "string") project.projectCode = body.projectCode.trim();
+  if (typeof body?.poNumber === "string") project.poNumber = body.poNumber.trim();
+  if (typeof body?.budget === "string") project.budget = body.budget.trim();
+  if (typeof body?.startDate === "string") project.startDate = body.startDate;
 
   state.updatedAt = new Date().toISOString();
   await saveState();
   broadcast({ type: "state-updated", updatedAt: state.updatedAt });
   return { ok: true, state, project };
+}
+
+// Builds a read-only summary of one project, laid out to match Energy PM's
+// own tabs (Overview / Schedule / Documents / Activity Log), so the admin
+// can copy each value straight into Energy PM's web form without having to
+// go hunting through this app for it. See /api/admin/energy-pm-sheet.
+function buildEnergyPmSheet(project) {
+  const phases = Array.isArray(project.phases) ? project.phases : [];
+  const progressValues = phases.map((p) => Number(p.progress) || 0);
+  const overallProgress = progressValues.length
+    ? Math.round(progressValues.reduce((a, b) => a + b, 0) / progressValues.length)
+    : 0;
+
+  // Every phase update, newest first, each tagged with its phase name.
+  const activityLog = phases
+    .flatMap((phase) => (Array.isArray(phase.updates) ? phase.updates : []).map((u) => ({ ...u, phaseName: phase.name })))
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+  // Diary reports filed through the contractor portal for this project —
+  // a second, often richer source of site photos/notes worth surfacing here.
+  const diaryRecords = (state.contractorRecords || [])
+    .filter((r) => r.type === "diary" && (r.payload || {}).projectId === project.id)
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+  const documents = [
+    ...activityLog.flatMap((u) => (Array.isArray(u.images) ? u.images : []).map((img) => ({
+      name: img.name, url: img.url, source: `อัปเดต: ${u.phaseName}`, date: u.createdAt,
+    }))),
+    ...diaryRecords.flatMap((r) => ((r.payload || {}).photos || []).map((src, i) => ({
+      name: `diary-${r.id}-${i + 1}`, url: src, source: `Diary: ${(r.payload || {}).work || "-"}`, date: r.createdAt,
+    }))),
+  ];
+
+  return {
+    project: { id: project.id, name: project.name },
+    overview: [
+      { label: "Project Code", value: project.projectCode || "", missing: !project.projectCode },
+      { label: "Location", value: project.location || "", missing: !project.location },
+      { label: "Project Manager", value: project.owner || "", missing: !project.owner },
+      { label: "PO Number", value: project.poNumber || "", missing: !project.poNumber },
+      { label: "Start Date", value: project.startDate || "", missing: !project.startDate },
+      { label: "End Date", value: project.dueDate || "", missing: !project.dueDate },
+      { label: "Budget (Baht)", value: project.budget || "", missing: !project.budget },
+      { label: "Overall Progress", value: `${overallProgress}%`, missing: false },
+    ],
+    description: [project.name, project.client ? `ลูกค้า: ${project.client}` : ""].filter(Boolean).join("\n"),
+    statusSummary: activityLog.length
+      ? `[${activityLog[0].phaseName}] ${activityLog[0].note || "-"} (${new Date(activityLog[0].createdAt).toLocaleDateString("th-TH")})`
+      : "",
+    milestones: phases.map((p) => ({
+      name: p.name, status: p.status, progress: p.progress,
+      checklist: Array.isArray(p.checklist) ? p.checklist : [],
+    })),
+    activityLog: activityLog.map((u) => ({
+      date: u.createdAt, phase: u.phaseName, author: u.author, note: u.note, progress: u.progress, status: u.status,
+    })),
+    documents,
+    cmPayment: { note: "ไม่มีข้อมูลสัญญา/การเบิกจ่ายในระบบนี้ — ต้องกรอกจากข้อมูลฝั่งบริหารสัญญาแยกต่างหาก" },
+  };
 }
 
 async function saveDataUrl(dataUrl, filenameHint) {

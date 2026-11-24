@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ชีทกรอก Energy PM | Total Solutions</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="/auth-guard.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#070c13; --panel: rgba(15, 22, 32, 0.6); --panel-strong:#0f1a29;
+    --line: rgba(242, 183, 5, 0.16); --text:#eef3f9; --muted:#8296b0;
+    --accent:#f2b705; --accent-2:#f7c948; --accent-3:#34d399; --bad:#f87171;
+    --font-ui:'Noto Sans Thai', sans-serif; --font-display:'Space Grotesk','Noto Sans Thai', sans-serif;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    background: radial-gradient(circle at 15% 0%, rgba(242,183,5,.10), transparent 42%), radial-gradient(circle at 100% 20%, rgba(58,120,200,.10), transparent 38%), linear-gradient(180deg,#050a10 0%,#0a1420 55%,#0c1826 100%);
+    color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; min-height:100%;
+  }
+  h1,h2,h3{font-family:var(--font-display);}
+  .shell{max-width:760px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;}
+  .stripe{height:2px;flex:none;background:linear-gradient(90deg,transparent,var(--accent) 30%,var(--accent-2) 50%,var(--accent) 70%,transparent);}
+  header.appbar{flex:none;padding:16px 24px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;backdrop-filter:blur(10px);}
+  header.appbar h1{font-size:18px;margin:0;}
+  header.appbar a{color:var(--muted);font-size:13px;text-decoration:none;}
+  header.appbar a:hover{color:var(--accent);}
+  main{flex:1;padding:22px 24px 60px;}
+  select{width:100%;background:var(--panel-strong);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px 14px;font-size:14.5px;font-family:var(--font-ui);margin-bottom:18px;}
+  .note{background:rgba(242,183,5,.08);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
+  .section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:16px;}
+  .section h2{font-size:14px;margin:0 0 12px;color:var(--accent);letter-spacing:.02em;}
+  .row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .row:last-child{border-bottom:none;}
+  .row .lbl{flex:0 0 150px;font-size:12.5px;color:var(--muted);font-weight:600;padding-top:3px;}
+  .row .val{flex:1;font-size:14px;white-space:pre-wrap;line-height:1.55;}
+  .row .val.missing{color:var(--bad);font-style:italic;}
+  .row .val input, .row .val textarea{width:100%;background:var(--panel-strong);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px;font-size:13.5px;font-family:var(--font-ui);}
+  .copy-btn{flex:none;background:var(--panel-strong);border:1.5px solid var(--line);color:var(--accent);border-radius:8px;padding:6px 11px;font-size:12px;cursor:pointer;white-space:nowrap;}
+  .copy-btn:hover{border-color:var(--accent);}
+  .copy-btn.copied{background:var(--accent-3);border-color:var(--accent-3);color:#04241a;}
+  .milestone{padding:10px 0;border-bottom:1px solid var(--line);}
+  .milestone:last-child{border-bottom:none;}
+  .milestone .mname{font-weight:700;font-size:14px;}
+  .milestone .mmeta{font-size:12px;color:var(--muted);margin:2px 0 6px;}
+  .milestone ul{margin:0;padding-left:18px;font-size:13px;color:var(--text);}
+  .doc-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .doc-item:last-child{border-bottom:none;}
+  .doc-item img{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--line);flex:none;}
+  .doc-item .dmeta{flex:1;font-size:12.5px;color:var(--muted);}
+  .doc-item a{color:var(--accent);font-size:12.5px;text-decoration:none;}
+  .activity-item{padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .activity-item:last-child{border-bottom:none;}
+  .activity-item .ameta{color:var(--muted);font-size:11.5px;margin-bottom:3px;}
+  .save-row{display:flex;justify-content:flex-end;margin-top:4px;}
+  .save-btn{background:var(--accent);border:none;color:#1a1200;font-weight:700;border-radius:10px;padding:9px 16px;font-size:13px;cursor:pointer;}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="stripe"></div>
+  <header class="appbar">
+    <h1>ชีทกรอก Energy PM</h1>
+    <a href="/">← กลับแดชบอร์ดหลัก</a>
+  </header>
+  <main>
+    <select id="projectSelect"></select>
+    <div class="note">หน้านี้ไม่ได้เชื่อมต่อกับ Energy PM โดยตรง (ระบบรองรับ API ภายนอกได้แค่ช่องเดียวซึ่งถูกใช้งานโดยข้อมูลส่วนกลางของ กฟผ. อยู่แล้ว) แต่รวบรวมข้อมูลที่มีอยู่แล้วในแอปนี้ มาจัดเรียงตามลำดับแท็บของ Energy PM ให้ กด "คัดลอก" แล้วไปวางในช่องกรอกของ Energy PM ได้เลย ไม่ต้องไล่หาข้อมูลเอง — ช่องที่ขึ้นสีแดงคือข้อมูลที่ระบบนี้ยังไม่มี ต้องกรอกเพิ่มเอง (กรอกครั้งเดียวที่นี่แล้วจะจำไว้ใช้ครั้งหน้า)</div>
+    <div id="content"></div>
+  </main>
+</div>
+<script>
+if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{})); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let projects = [];
+let currentProject = null;
+let currentSheet = null;
+
+async function init(){
+  try{
+    const data = await fetch('/api/contractor/projects').then(r=>r.json());
+    projects = data.projects || [];
+  }catch(e){
+    document.getElementById('content').innerHTML = `<div class="empty-state">โหลดรายชื่อโครงการไม่สำเร็จ: ${e.message}</div>`;
+    return;
+  }
+  const sel = document.getElementById('projectSelect');
+  if(!projects.length){
+    sel.style.display = 'none';
+    document.getElementById('content').innerHTML = `<div class="empty-state">ยังไม่มีโครงการในระบบ</div>`;
+    return;
+  }
+  sel.innerHTML = projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  sel.addEventListener('change', ()=>loadSheet(sel.value));
+  loadSheet(sel.value);
+}
+
+async function loadSheet(projectId){
+  const content = document.getElementById('content');
+  content.innerHTML = `<div class="empty-state">กำลังโหลด...</div>`;
+  try{
+    currentSheet = await fetch('/api/admin/energy-pm-sheet?projectId=' + encodeURIComponent(projectId)).then(r=>r.json());
+  }catch(e){
+    content.innerHTML = `<div class="empty-state">โหลดข้อมูลไม่สำเร็จ: ${e.message}</div>`;
+    return;
+  }
+  currentProject = projectId;
+  render();
+}
+
+function copyText(btn, text){
+  navigator.clipboard.writeText(text || '').then(()=>{
+    const old = btn.textContent;
+    btn.textContent = '✓ คัดลอกแล้ว';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent = old; btn.classList.remove('copied'); }, 1400);
+  });
+}
+window.copyText = copyText;
+
+function overviewRow(f){
+  const fieldKeyMap = { 'Project Code':'projectCode', 'Location':'location', 'Project Manager':'owner', 'PO Number':'poNumber', 'Start Date':'startDate', 'End Date':'dueDate', 'Budget (Baht)':'budget' };
+  const key = fieldKeyMap[f.label];
+  if(f.missing && key){
+    const type = (key==='startDate'||key==='dueDate') ? 'date' : 'text';
+    return `<div class="row">
+      <div class="lbl">${f.label}</div>
+      <div class="val missing"><input type="${type}" id="edit_${key}" placeholder="ยังไม่มีข้อมูล — กรอกที่นี่"></div>
+    </div>`;
+  }
+  return `<div class="row">
+    <div class="lbl">${f.label}</div>
+    <div class="val">${escapeHtml(f.value)}</div>
+    <button class="copy-btn" onclick='copyText(this, ${JSON.stringify(f.value)})'>คัดลอก</button>
+  </div>`;
+}
+
+function render(){
+  const s = currentSheet;
+  const content = document.getElementById('content');
+  const needsSave = s.overview.some(f => f.missing);
+
+  let html = `<div class="section"><h2>Project Overview</h2>`;
+  html += s.overview.map(overviewRow).join('');
+  if(needsSave){
+    html += `<div class="save-row"><button class="save-btn" onclick="saveMissingFields()">💾 บันทึกข้อมูลที่กรอกเพิ่ม</button></div>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="section"><h2>Project Description</h2>
+    <div class="row"><div class="val">${escapeHtml(s.description || '-')}</div>
+    <button class="copy-btn" onclick='copyText(this, ${JSON.stringify(s.description||"")})'>คัดลอก</button></div></div>`;
+
+  html += `<div class="section"><h2>Project Status Summary</h2>
+    <div class="row"><div class="val">${escapeHtml(s.statusSummary || 'ยังไม่มีการอัปเดตความคืบหน้า')}</div>
+    <button class="copy-btn" onclick='copyText(this, ${JSON.stringify(s.statusSummary||"")})'>คัดลอก</button></div></div>`;
+
+  html += `<div class="section"><h2>Project Milestones / Work Details</h2>`;
+  if(s.milestones.length){
+    html += s.milestones.map(m=>{
+      const text = `${m.name} — ${m.status} (${m.progress}%)`;
+      return `<div class="milestone">
+        <div class="mname">${escapeHtml(m.name)}</div>
+        <div class="mmeta">${escapeHtml(m.status)} · ${m.progress}%
+          <button class="copy-btn" onclick='copyText(this, ${JSON.stringify(text)})'>คัดลอก</button>
+        </div>
+        ${m.checklist.length ? `<ul>${m.checklist.map(c=>`<li>${escapeHtml(c)}</li>`).join('')}</ul>` : ''}
+      </div>`;
+    }).join('');
+  } else {
+    html += `<div class="row"><div class="val missing">ไม่มีข้อมูล Milestone</div></div>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="section"><h2>Project Activity Log</h2>`;
+  if(s.activityLog.length){
+    html += s.activityLog.map(a=>{
+      const dt = new Date(a.date).toLocaleString('th-TH');
+      const text = `[${dt}] ${a.phase}: ${a.note || '-'} (${a.progress}% / ${a.status})`;
+      return `<div class="activity-item">
+        <div class="ameta">${dt} · ${escapeHtml(a.phase)} · ${escapeHtml(a.author||'-')}</div>
+        <div>${escapeHtml(a.note||'-')}</div>
+        <button class="copy-btn" onclick='copyText(this, ${JSON.stringify(text)})' style="margin-top:6px;">คัดลอก</button>
+      </div>`;
+    }).join('');
+  } else {
+    html += `<div class="row"><div class="val missing">ยังไม่มี Activity Log</div></div>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="section"><h2>Documents (รูปภาพ/เอกสารแนบ)</h2>`;
+  if(s.documents.length){
+    html += s.documents.map(d=>`<div class="doc-item">
+      <img src="${d.url}">
+      <div class="dmeta">${escapeHtml(d.source)}<br>${new Date(d.date).toLocaleDateString('th-TH')}</div>
+      <a href="${d.url}" download target="_blank">ดาวน์โหลด</a>
+    </div>`).join('');
+  } else {
+    html += `<div class="row"><div class="val missing">ไม่มีเอกสาร/รูปภาพแนบ</div></div>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="section"><h2>CM · Contract Management</h2>
+    <div class="row"><div class="val missing">${escapeHtml(s.cmPayment.note)}</div></div></div>`;
+
+  content.innerHTML = html;
+}
+
+async function saveMissingFields(){
+  const body = {};
+  ['projectCode','poNumber','budget','startDate'].forEach(k=>{
+    const el = document.getElementById('edit_'+k);
+    if(el && el.value) body[k] = el.value;
+  });
+  if(Object.keys(body).length === 0) return;
+  await fetch('/api/project/' + encodeURIComponent(currentProject), {
+    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body),
+  });
+  loadSheet(currentProject);
+}
+window.saveMissingFields = saveMissingFields;
+
+init();
+</script>
+</body>
+</html>

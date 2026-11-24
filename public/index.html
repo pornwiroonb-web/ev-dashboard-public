@@ -344,6 +344,10 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       นำเข้าจาก Planner
     </a>
+    <a href="/energy-pm-sheet.html" class="report-fab" id="energy-pm-fab" style="display:none;bottom:436px;background:#27e0c2;color:#022019;border:1px solid rgba(39,224,194,.4);box-shadow:0 4px 20px rgba(39,224,194,0.3)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+      ชีทกรอก Energy PM
+    </a>
     <script>
       const fab=document.getElementById('report-fab');
       const plannerFab=document.getElementById('planner-fab');
@@ -351,6 +355,7 @@
       const clientFab=document.getElementById('client-fab');
       const adminRecordsFab=document.getElementById('admin-records-fab');
       const plannerImportFab=document.getElementById('planner-import-fab');
+      const energyPmFab=document.getElementById('energy-pm-fab');
       const shell=document.getElementById('dashboard-shell');
       new MutationObserver(()=>{
         const show = !shell.classList.contains('hidden');
@@ -360,6 +365,7 @@
         clientFab.style.display = show ? 'flex' : 'none';
         adminRecordsFab.style.display = show ? 'flex' : 'none';
         plannerImportFab.style.display = show ? 'flex' : 'none';
+        energyPmFab.style.display = show ? 'flex' : 'none';
       }).observe(shell,{attributes:true,attributeFilter:['class']});
     </script>
   </body>
